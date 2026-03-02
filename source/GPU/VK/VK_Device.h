@@ -80,6 +80,42 @@ namespace GPU {
 		return LYR;
 	}
 
+
+	/*	 # Physical device	 */
+	struct VK_PhysicalDevice
+	{
+		VkPhysicalDevice pPhysDevice;
+		VkPhysicalDeviceProperties m_devProps;
+		std::vector<VkQueueFamilyProperties> m_qFamilyProps;
+		std::vector<VkBool32> m_qSupportsPresent;
+		std::vector<VkSurfaceFormatKHR> m_surfaceFormats;
+		VkSurfaceCapabilitiesKHR m_surfaceCaps;
+		VkPhysicalDeviceMemoryProperties m_memProps;
+		std::vector<VkPresentModeKHR> m_presentModes;
+		VkPhysicalDeviceFeatures m_features;
+		VkFormat m_depthFormat;
+		struct {
+			int Variant = 0;
+			int Major = 0;
+			int Minor = 0;
+			int Patch = 0;
+		} m_apiVersion;
+		std::vector<VkExtensionProperties> m_extensions;
+
+		inline bool IsExtensionSupported(const char* pExt) const
+		{
+			return false;
+		}
+	};
+
+	/*	 # The window types	  */
+	enum WinType
+	{
+		NO = 0,
+		SDL3 = 1,
+		GLFW = 2
+	};
+
 	/*	 # The Device it self	*/
 	class VK_Device
 	{
@@ -87,25 +123,33 @@ namespace GPU {
 		VK_Device() {}
 		~VK_Device() {}
 
+		// # Get the number of physical devices
+		inline uint32_t GetPhyDevCount() const { return pPhyDevCount; }
 		// # Get the name of running physical device
 		inline std::string GetPhyDevName() const { return pPhyDevName; }
 		// # Get the type of running physical device
 		inline PhyDeviceType GetPhyDevType() const { return pPhyDevType; }
 
 		// # Create vulkan context ( Instance - PhysicalDev - Device )
-		void Create();
+		void Create(WinType pWinType, void* pAppWin);
 
 	private:
 		VkInstance pInstance		= VK_NULL_HANDLE;
+		VkSurfaceKHR pSurface		= VK_NULL_HANDLE;
 		VkPhysicalDevice pPhyDevice = VK_NULL_HANDLE;
 		VkDevice pDevice			= VK_NULL_HANDLE;
 
+		/*	# Physical devices  */
+		uint32_t pPhyDevCount	  = 0;
 		std::string pPhyDevName   = "";
 		PhyDeviceType pPhyDevType = NONE;
 
+		std::vector<VK_PhysicalDevice> m_pPhyDevices;
 
 		/* # Init functions */
 		void CreateInstance();
+		void CreateDebugCallMessenger();
+		void CreateSurface(WinType pWinType, void* pAppWin);
 		void CreatePhysicalDevice();
 		void CreateDevice();
 	};

@@ -5,11 +5,9 @@ project("RHI-Editor-3D-")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# GLFW
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/extern/glfw/lib/cmake/glfw3")
-find_package(glfw3 CONFIG REQUIRED)
-
-set(GLFW_PATH "${CMAKE_SOURCE_DIR}/extern/glfw")
+# SDL3
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/extern/SDL3")
+find_package(SDL3 REQUIRED CONFIG COMPONENTS SDL3)
 
 # Vulkan
 set(VULKAN_PATH "${CMAKE_SOURCE_DIR}/extern/Vulkan")
@@ -28,7 +26,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 # Target include directories
 target_include_directories(${PROJECT_NAME} PRIVATE
 						"${CMAKE_SOURCE_DIR}/source"				    # source
-						"${GLFW_PATH}/include"						    # glfw
 						"${VULKAN_PATH}/include"					    # VK
 						"${CMAKE_SOURCE_DIR}/extern/spdlog/include"     # Spdlog
 )
@@ -36,8 +33,21 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # Target link libararise
 target_link_libraries(${PROJECT_NAME} PRIVATE
 						"${VULKAN_PATH}/Lib/vulkan-1.lib"
-						"${GLFW_PATH}/lib/glfw3.lib"
+						SDL3::SDL3
 )
+
+# If Windows we will use SDL3
+if(WIN32)
+
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+						COMMAND ${CMAKE_COMMAND} -E copy_if_different
+						"${CMAKE_SOURCE_DIR}/extern/SDL3/lib/x64/SDL3.dll"
+							$<TARGET_FILE_DIR:${PROJECT_NAME}>
+	)
+
+	add_compile_definitions(SDL_WIN)
+
+endif()
 
 # Definons
 add_compile_definitions(GPU_DEBUG TRUE)
