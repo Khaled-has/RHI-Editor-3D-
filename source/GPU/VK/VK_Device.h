@@ -20,6 +20,32 @@ namespace GPU {
 		NIVDIA		= BIN(3),
 		AMD			= BIN(4)
 	};
+
+	inline std::string GetDeviceType(VkPhysicalDeviceType pType)
+	{
+		std::string result = "";
+
+		if ((pType & VK_PHYSICAL_DEVICE_TYPE_OTHER) == VK_PHYSICAL_DEVICE_TYPE_OTHER)
+			result += "Other";
+
+		if ((pType & VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+			result += "Integrated GPU";
+
+		if ((pType & VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+			result += "Discrete GPU";
+
+		if ((pType & VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU) == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU)
+			result += "Virtual GPU";
+
+		if ((pType & VK_PHYSICAL_DEVICE_TYPE_CPU) == VK_PHYSICAL_DEVICE_TYPE_CPU)
+			result += "CPU";
+
+		if ((pType & VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM) == VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM)
+			result += "Max Enum";
+
+		return result;
+	}
+
 	/*	 # Vulkan extensions	*/
 	enum VKExtensions
 	{
@@ -35,24 +61,18 @@ namespace GPU {
 	inline const std::vector<const char*> VK_Get_Extensions(unsigned int _ext)
 	{
 		std::vector<const char*> EXT;
-
-		switch (_ext)
-		{
-		case VK_SURFACE_EXT_NAME:
+		
+		if ((_ext & VK_SURFACE_EXT_NAME) == VK_SURFACE_EXT_NAME)
 			EXT.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-			break;
 
-		case VK_DEBUG_UTILS_EXT:
-			EXT.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-			break;
-
-		case VK_WIN32_SURFACE_EXT:
+		if ((_ext & VK_WIN32_SURFACE_EXT) == VK_WIN32_SURFACE_EXT)
 			EXT.push_back("VK_KHR_win32_surface");
-			break;
 
-		case VK_LINUX_SURFACE_EXT:
+		if((_ext & VK_LINUX_SURFACE_EXT) == VK_LINUX_SURFACE_EXT)
 			EXT.push_back("VK_KHR_xcb_surface");
-		}
+
+		if ((_ext & VK_DEBUG_UTILS_EXT) == VK_DEBUG_UTILS_EXT)
+			EXT.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
 		return EXT;
 	}
@@ -70,12 +90,8 @@ namespace GPU {
 	{
 		std::vector<const char*> LYR;
 
-		switch (_lyr)
-		{
-		case VK_VALIDATION_LAYER:
+		if ((_lyr & VK_VALIDATION_LAYER) == VK_VALIDATION_LAYER)
 			LYR.push_back("VK_LAYER_KHRONOS_validation");
-			break;
-		}
 
 		return LYR;
 	}
@@ -123,12 +139,14 @@ namespace GPU {
 		VK_Device() {}
 		~VK_Device() {}
 
+		// # Get device
+		inline const VkInstance& GetInstance() const { return pInstance; }
+		inline const VkSurfaceKHR& GetSurface() const { return pSurface; }
+		inline const VK_PhysicalDevice& GetSelectedDevice() const { return GetSelectedDevice(); }
+		inline const VK_PhysicalDevice& GetPhysicalDevice(uint32_t Index) const { return m_pPhyDevices[Index]; }
+		inline const VkDevice& GetDevice() const { return pDevice; }
 		// # Get the number of physical devices
 		inline uint32_t GetPhyDevCount() const { return pPhyDevCount; }
-		// # Get the name of running physical device
-		inline std::string GetPhyDevName() const { return pPhyDevName; }
-		// # Get the type of running physical device
-		inline PhyDeviceType GetPhyDevType() const { return pPhyDevType; }
 
 		// # Create vulkan context ( Instance - PhysicalDev - Device )
 		void Create(WinType pWinType, void* pAppWin);
@@ -136,15 +154,16 @@ namespace GPU {
 	private:
 		VkInstance pInstance		= VK_NULL_HANDLE;
 		VkSurfaceKHR pSurface		= VK_NULL_HANDLE;
-		VkPhysicalDevice pPhyDevice = VK_NULL_HANDLE;
 		VkDevice pDevice			= VK_NULL_HANDLE;
 
 		/*	# Physical devices  */
-		uint32_t pPhyDevCount	  = 0;
-		std::string pPhyDevName   = "";
-		PhyDeviceType pPhyDevType = NONE;
+		uint32_t pPhyDevCount		   = 0;
+		uint32_t pSelectedPhyDevIndex  = 0;
 
 		std::vector<VK_PhysicalDevice> m_pPhyDevices;
+
+		const VK_PhysicalDevice& GetPhysicalDevices(uint32_t Index);
+		const VK_PhysicalDevice& GetSelectedDevice();
 
 		/* # Init functions */
 		void CreateInstance();

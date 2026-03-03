@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 	Log::Init();
 
 	SDL_Init(SDL_INIT_VIDEO);
-	SDL_Window* pWin = SDL_CreateWindow("RHI Editor ( 3D )", 1440, 640, SDL_WINDOW_VULKAN);
+	SDL_Window* pWin = SDL_CreateWindow("RHI Editor ( 3D )", 1440, 720, SDL_WINDOW_VULKAN);
 
 	GPU::VK_Device test;
 	test.Create(GPU::WinType::SDL3, pWin);
