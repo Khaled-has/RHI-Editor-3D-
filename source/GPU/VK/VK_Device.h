@@ -145,6 +145,7 @@ namespace GPU {
 		inline const VK_PhysicalDevice& GetSelectedDevice() const { return GetSelectedDevice(); }
 		inline const VK_PhysicalDevice& GetPhysicalDevice(uint32_t Index) const { return m_pPhyDevices[Index]; }
 		inline const VkDevice& GetDevice() const { return pDevice; }
+
 		// # Get the number of physical devices
 		inline uint32_t GetPhyDevCount() const { return pPhyDevCount; }
 
@@ -162,7 +163,7 @@ namespace GPU {
 
 		std::vector<VK_PhysicalDevice> m_pPhyDevices;
 
-		const VK_PhysicalDevice& GetPhysicalDevices(uint32_t Index);
+		const VK_PhysicalDevice& GetPhysicalDevice(uint32_t Index);
 		const VK_PhysicalDevice& GetSelectedDevice();
 
 		/* # Init functions */

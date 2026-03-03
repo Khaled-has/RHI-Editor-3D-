@@ -131,7 +131,7 @@ namespace GPU
 		CreatePhysicalDevice();
 	}
 
-	const VK_PhysicalDevice& VK_Device::GetPhysicalDevices(uint32_t Index)
+	const VK_PhysicalDevice& VK_Device::GetPhysicalDevice(uint32_t Index)
 	{
 		return m_pPhyDevices[Index];
 	}
