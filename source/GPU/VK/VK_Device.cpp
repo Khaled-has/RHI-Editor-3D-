@@ -336,6 +336,7 @@ namespace GPU
 			m_pPhyDevices[i].m_depthFormat = FindDepthFormat(PhyDev);
 		}
 	}
+
 	void VK_Device::CreateDevice()
 	{
 	}
