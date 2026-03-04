@@ -233,7 +233,12 @@ namespace GPU
 	void VK_Device::Create(WinType pWinType, void* pAppWin)
 	{
 		CreateInstance();
+#ifdef _ANDROID
+		// Dont't compilt it for android
+#else
+		// Debug utils messenger
 		CreateDebugCallMessenger();
+#endif
 		CreateSurface(pWinType, pAppWin);
 		CreatePhysicalDevice();
 		CreateDevice();

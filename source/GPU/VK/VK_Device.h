@@ -52,7 +52,8 @@ namespace GPU {
 		VK_SURFACE_EXT_NAME		= BIN(5),
 		VK_WIN32_SURFACE_EXT	= BIN(6),
 		VK_LINUX_SURFACE_EXT	= BIN(7),
-		VK_DEBUG_UTILS_EXT		= BIN(8)
+		VK_ANDROID_SURFACE_EXT  = BIN(8),
+		VK_DEBUG_UTILS_EXT		= BIN(9)
 	};
 
 	//	 # Hard coded extensions used
@@ -71,6 +72,9 @@ namespace GPU {
 		if((_ext & VK_LINUX_SURFACE_EXT) == VK_LINUX_SURFACE_EXT)
 			EXT.push_back("VK_KHR_xcb_surface");
 
+		if ((_ext & VK_ANDROID_SURFACE_EXT) == VK_ANDROID_SURFACE_EXT)
+			EXT.push_back("VK_KHR_android_surface");
+
 		if ((_ext & VK_DEBUG_UTILS_EXT) == VK_DEBUG_UTILS_EXT)
 			EXT.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
@@ -80,7 +84,7 @@ namespace GPU {
 	/*	 # Vulkan layers	*/
 	enum VKLayers
 	{
-		VK_VALIDATION_LAYER		= BIN(9)
+		VK_VALIDATION_LAYER		= BIN(10)
 	};
 
 	//	 # Hard coded layers used
@@ -90,9 +94,11 @@ namespace GPU {
 	{
 		std::vector<const char*> LYR;
 
+#ifdef _ANDROID
+#else
 		if ((_lyr & VK_VALIDATION_LAYER) == VK_VALIDATION_LAYER)
 			LYR.push_back("VK_LAYER_KHRONOS_validation");
-
+#endif
 		return LYR;
 	}
 
