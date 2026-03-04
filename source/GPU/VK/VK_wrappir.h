@@ -9,5 +9,7 @@
 
 #define VK_LOG_INFO(...) GPU_LOG_INFO(""); GPU_LOG_INFO("GPU : VK_Backend # "); GPU_LOG_INFO(__VA_ARGS__);
 #define VK_LOG_ERROR(...) GPU_LOG_ERROR(""); GPU_LOG_ERROR("GPU : VK_Backend # Error: "); GPU_LOG_ERROR(__VA_ARGS__);
+#define VK_LOG_WARN(...) GPU_LOG_WARN(""); GPU_LOG_WARN("GPU : VK_Backend # Warning: "); GPU_LOG_WARN(__VA_ARGS__);
+#define VK_LOG_TRACE(...) GPU_LOG_TRACE(""); GPU_LOG_TRACE("GPU : VK_Backend # Info: "); GPU_LOG_TRACE(__VA_ARGS__);
 
 #endif

@@ -124,11 +124,136 @@ namespace GPU
 		return DepthFormat;
 	}
 
+	const char* GetDebugSeverityStr(VkDebugUtilsMessageSeverityFlagBitsEXT Severity)
+	{
+
+		switch (Severity) {
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+			return "Verbose";
+
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+			return "Info";
+
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+			return "Warning";
+
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+			return "Error";
+
+		default:
+			VK_LOG_ERROR("Invalid severity code");
+			exit(1);
+		}
+
+		return "NO SUCH SEVERITY!";
+	}
+
+	const char* GetDebugType(VkDebugUtilsMessageTypeFlagsEXT Type)
+	{
+
+		switch (Type) {
+		case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
+			return "General";
+
+		case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
+			return "Validation";
+
+		case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
+			return "Performance";
+
+#ifdef _WIN64 // doesn't work on my Linux for some reason
+		case VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT:
+			return "Device address binding";
+#endif
+
+		default:
+			printf("Invalid type code %d\n", Type);
+			exit(1);
+		}
+
+		return "NO SUCH TYPE!";
+	}
+
+	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
+		VkDebugUtilsMessageSeverityFlagBitsEXT Severity,
+		VkDebugUtilsMessageTypeFlagsEXT Type,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData)
+	{
+		std::string pT = GetDebugSeverityStr(Severity);
+		if (pT == "Error")
+		{
+			VK_LOG_ERROR("Debug callback: {0} \n		Severity {1}\n			Type {2}\n		   Object ",
+				pCallbackData->pMessage, GetDebugSeverityStr(Severity), GetDebugType(Type)
+			);
+		}
+		else
+		{
+			VK_LOG_TRACE("Debug callback: {0} \n		Severity {1}\n			Type {2}\n		   Object ",
+				pCallbackData->pMessage, GetDebugSeverityStr(Severity), GetDebugType(Type)
+			);
+		}
+
+
+		for (uint32_t i = 0; i < pCallbackData->objectCount; i++) {
+#ifdef _WIN32
+			if (pT == "Error")
+			{
+				VK_LOG_ERROR("{0}", pCallbackData->pObjects[i].objectHandle);
+			}
+			else
+			{
+				VK_LOG_TRACE("{0}", pCallbackData->pObjects[i].objectHandle);
+			}
+#else
+			if (GetDebugSeverityStr(Severity) == "Error")
+			{
+				VK_LOG_ERROR("{0}", pCallbackData->pObjects[i].objectHandle);
+			}
+			else
+			{
+				VK_LOG_TRACE("{0}", pCallbackData->pObjects[i].objectHandle);
+			}
+#endif
+		}
+
+		return VK_FALSE;  // The calling function should not be aborted
+	}
+
+	bool VK_Device::IsExtSupported(const char* _Ext, uint32_t pPhyDeviceIndex) const
+	{
+		return m_pPhyDevices[pPhyDeviceIndex].IsExtensionSupported(_Ext);
+	}
+
+	bool VK_Device::IsExtSupported(const char* _Ext) const
+	{
+		return GetSelectedDevice().IsExtensionSupported(_Ext);
+	}
+
 	void VK_Device::Create(WinType pWinType, void* pAppWin)
 	{
 		CreateInstance();
+		CreateDebugCallMessenger();
 		CreateSurface(pWinType, pAppWin);
 		CreatePhysicalDevice();
+		CreateDevice();
+	}
+
+	void VK_Device::Destroy()
+	{
+		vkDestroyDevice(pDevice, NULL);
+		vkDestroySurfaceKHR(pInstance, pSurface, NULL);
+
+		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = VK_NULL_HANDLE;
+		vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(pInstance, "vkDestroyDebugUtilsMessengerEXT");
+		if (!vkDestroyDebugUtilsMessengerEXT)
+		{
+			VK_LOG_ERROR("Cannot find address of vkDestroyDebugUtilsMessengerEXT");
+			exit(1);
+		}
+		vkDestroyDebugUtilsMessengerEXT(pInstance, pDebugMessenger, NULL);
+
+		vkDestroyInstance(pInstance, NULL);
 	}
 
 	const VK_PhysicalDevice& VK_Device::GetPhysicalDevice(uint32_t Index)
@@ -143,6 +268,16 @@ namespace GPU
 
 	void VK_Device::CreateInstance()
 	{
+		// # Get the instance api version
+		uint32_t InstanceVersion;
+		VkResult res = vkEnumerateInstanceVersion(&InstanceVersion);
+		VK_CHECK("vkEnumerateInstanceVersion", res);
+
+		pInstanceVersion.Major = VK_API_VERSION_MAJOR(InstanceVersion);
+		pInstanceVersion.Minor = VK_API_VERSION_MINOR(InstanceVersion);
+		pInstanceVersion.Patch = VK_API_VERSION_PATCH(InstanceVersion);
+
+		// # Create instance
 		VkApplicationInfo AppInfo;
 		AppInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		AppInfo.pNext = NULL;
@@ -150,7 +285,9 @@ namespace GPU
 		AppInfo.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
 		AppInfo.pEngineName = "RHI Editor ( 3D )";
 		AppInfo.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-		AppInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+		AppInfo.apiVersion = VK_MAKE_API_VERSION(
+			0, pInstanceVersion.Major, pInstanceVersion.Minor, pInstanceVersion.Patch
+		);
 
 
 		std::vector<const char*> Layers = VK_Get_Layers(VK_Layers);
@@ -166,12 +303,38 @@ namespace GPU
 		CreateInfo.enabledExtensionCount = (uint32_t)Extensions.size();
 		CreateInfo.ppEnabledExtensionNames = Extensions.data();
 
-		VkResult res = vkCreateInstance(&CreateInfo, NULL, &pInstance);
+		res = vkCreateInstance(&CreateInfo, NULL, &pInstance);
 		VK_CHECK("vkCreateInstance", res);
 	}
 
 	void VK_Device::CreateDebugCallMessenger()
 	{
+		VkDebugUtilsMessengerCreateInfoEXT MessengerCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+			.pNext = NULL,
+
+			.messageSeverity =
+			VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+			VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+
+			.messageType =
+			VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+			VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+
+			.pfnUserCallback = &DebugCallback,
+			.pUserData = NULL
+		};
+
+		PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessenger = VK_NULL_HANDLE;
+		vkCreateDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(pInstance, "vkCreateDebugUtilsMessengerEXT");
+		if (!vkCreateDebugUtilsMessenger)
+		{
+			VK_LOG_ERROR("Cannot find address of vkCreateDebugUtilsMessenger");
+			exit(1);
+		}
+
+		VkResult res = vkCreateDebugUtilsMessenger(pInstance, &MessengerCreateInfo, NULL, &pDebugMessenger);
+		VK_CHECK("vkCreateDebugUtilsMessenger", res);
 	}
 
 	void VK_Device::CreateSurface(WinType pWinType, void* pAppWin)
@@ -204,7 +367,6 @@ namespace GPU
 
 	void VK_Device::CreatePhysicalDevice()
 	{
-
 		/*	 # Get the physical devices on this device	 */
 		VkResult res = vkEnumeratePhysicalDevices(pInstance, &pPhyDevCount, NULL);
 		VK_CHECK("vkEnumeratePhysicalDevices", res);
@@ -231,11 +393,11 @@ namespace GPU
 
 			// # Device API version
 			uint32_t apiV = m_pPhyDevices[i].m_devProps.apiVersion;
-			m_pPhyDevices[i].m_apiVersion.Major = VK_API_VERSION_VARIANT(apiV);
-			m_pPhyDevices[i].m_apiVersion.Minor = VK_API_VERSION_VARIANT(apiV);
-			m_pPhyDevices[i].m_apiVersion.Patch = VK_API_VERSION_VARIANT(apiV);
+			m_pPhyDevices[i].m_apiVersion.Major = VK_API_VERSION_MAJOR(apiV);
+			m_pPhyDevices[i].m_apiVersion.Minor = VK_API_VERSION_MINOR(apiV);
+			m_pPhyDevices[i].m_apiVersion.Patch = VK_API_VERSION_PATCH(apiV);
 
-			VK_LOG_INFO("Api Version Supported: {0}.{1}.{2}", m_pPhyDevices[i].m_apiVersion.Minor, m_pPhyDevices[i].m_apiVersion.Minor, m_pPhyDevices[i].m_apiVersion.Patch);
+			VK_LOG_INFO("Api Version Supported: {0}.{1}.{2}", m_pPhyDevices[i].m_apiVersion.Major, m_pPhyDevices[i].m_apiVersion.Minor, m_pPhyDevices[i].m_apiVersion.Patch);
 
 			// # Device extensions
 			uint32_t ExtensionsCount;
@@ -335,9 +497,102 @@ namespace GPU
 			// # Device depth format
 			m_pPhyDevices[i].m_depthFormat = FindDepthFormat(PhyDev);
 		}
+
+		// # Select physical device
+		for (uint32_t i = 0; i < m_pPhyDevices.size(); i++)
+		{
+			for (uint32_t j = 0; j < m_pPhyDevices[i].m_qFamilyProps.size(); j++)
+			{
+				const VkQueueFamilyProperties& QFamilyProp = m_pPhyDevices[i].m_qFamilyProps[j];
+
+				if ((QFamilyProp.queueFlags & VK_QUEUE_GRAPHICS_BIT) && ((bool)m_pPhyDevices[i].m_qSupportsPresent[j] == VK_TRUE))
+				{
+					pSelectedPhyDevIndex = i;
+					pSelectedPhyDevQueueIndex = j;
+					VK_LOG_INFO(
+						"Using GFX device {0} and queue family {1}", 
+						pSelectedPhyDevIndex, pSelectedPhyDevQueueIndex
+					);
+				}
+			}
+		}
 	}
 
 	void VK_Device::CreateDevice()
 	{
+		float pPriorites[] = { 1.0f };
+
+		VkDeviceQueueCreateInfo qInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+			.pNext = NULL,
+			.flags = 0, // must be zero
+			.queueFamilyIndex = pSelectedPhyDevQueueIndex,
+			.queueCount = 1,
+			.pQueuePriorities = &pPriorites[0]
+		};
+
+		std::vector<const char*> DevExts = {
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+			VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME
+		};
+
+		// # Device extensions support
+		bool DeviceSupportsDynamicRendering = GetSelectedDevice().IsExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+		bool Instance_is_1_3_or_more = (pInstanceVersion.Major > 1) || (pInstanceVersion.Minor >= 3);
+
+		if (Instance_is_1_3_or_more && DeviceSupportsDynamicRendering)
+		{
+			VK_LOG_INFO("The Vulkan instance and device support dynamic rendering as a core feature");
+		}
+		else if (pInstanceVersion.Minor == 2)
+		{
+			if (DeviceSupportsDynamicRendering)
+			{
+				DevExts.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+			}
+			else
+			{
+				VK_LOG_WARN("The system doesn't support dynamic rendering");
+			}
+		}
+		else {
+			VK_LOG_WARN("The system doesn't support dynamic rendering");
+		}
+
+		if (GetSelectedDevice().m_features.geometryShader == VK_FALSE)
+		{
+			VK_LOG_WARN("The Geometry shader is not supported!");
+		}
+		if (GetSelectedDevice().m_features.tessellationShader == VK_FALSE)
+		{
+			VK_LOG_WARN("The Tessellation shader is not supported!");
+		}
+
+		VkPhysicalDeviceFeatures DeviceFeature = { 0 };
+		DeviceFeature.geometryShader = VK_TRUE;
+		DeviceFeature.tessellationShader = VK_TRUE;
+
+		VkPhysicalDeviceDynamicRenderingFeaturesKHR DynamicRenderingFeature = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+			.pNext = NULL,
+			.dynamicRendering = VK_TRUE
+		};
+
+		VkDeviceCreateInfo DeviceCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+			.pNext = &DynamicRenderingFeature,
+			.flags = 0,
+			.queueCreateInfoCount = 1,
+			.pQueueCreateInfos = &qInfo,
+			.enabledLayerCount = 0,			// DEPRECATED
+			.ppEnabledLayerNames = NULL,	// DEPRECATED
+			.enabledExtensionCount = (uint32_t)DevExts.size(),
+			.ppEnabledExtensionNames = DevExts.data(),
+			.pEnabledFeatures = &DeviceFeature
+		};
+
+		VkResult res = vkCreateDevice(GetSelectedDevice().pPhysDevice, &DeviceCreateInfo, NULL, &pDevice);
+		VK_CHECK("vkCreateDevice", res);
 	}
 }

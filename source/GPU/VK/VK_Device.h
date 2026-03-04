@@ -120,6 +120,16 @@ namespace GPU {
 
 		inline bool IsExtensionSupported(const char* pExt) const
 		{
+			std::string Ext = pExt;
+
+			for (uint32_t i = 0; i < m_extensions.size(); i++)
+			{
+				std::string e = m_extensions[i].extensionName;
+				if (Ext == e)
+				{
+					return true;
+				}
+			}
 			return false;
 		}
 	};
@@ -146,20 +156,35 @@ namespace GPU {
 		inline const VK_PhysicalDevice& GetPhysicalDevice(uint32_t Index) const { return m_pPhyDevices[Index]; }
 		inline const VkDevice& GetDevice() const { return pDevice; }
 
+		inline uint32_t GetSelectedQFamily() const { return pSelectedPhyDevQueueIndex; }
+
+		// # Device checks
+		bool IsExtSupported(const char* _Ext, uint32_t pPhyDeviceIndex) const;
+		bool IsExtSupported(const char* _Ext) const;
+
 		// # Get the number of physical devices
 		inline uint32_t GetPhyDevCount() const { return pPhyDevCount; }
 
-		// # Create vulkan context ( Instance - PhysicalDev - Device )
+		// #  Init & Destroy Vulkan context ( Instance - Surface - PhysicalDev - Device )
 		void Create(WinType pWinType, void* pAppWin);
+		void Destroy();
 
 	private:
-		VkInstance pInstance		= VK_NULL_HANDLE;
-		VkSurfaceKHR pSurface		= VK_NULL_HANDLE;
-		VkDevice pDevice			= VK_NULL_HANDLE;
+		VkInstance pInstance					 = VK_NULL_HANDLE;
+		VkSurfaceKHR pSurface					 = VK_NULL_HANDLE;
+		VkDebugUtilsMessengerEXT pDebugMessenger = VK_NULL_HANDLE;
+		VkDevice pDevice						 = VK_NULL_HANDLE;
+
+		struct {
+			int Major = 0;
+			int Minor = 0;
+			int Patch = 0;
+		} pInstanceVersion;
 
 		/*	# Physical devices  */
-		uint32_t pPhyDevCount		   = 0;
-		uint32_t pSelectedPhyDevIndex  = 0;
+		uint32_t pPhyDevCount			   = 0;
+		uint32_t pSelectedPhyDevIndex	   = 0;
+		uint32_t pSelectedPhyDevQueueIndex = 0;
 
 		std::vector<VK_PhysicalDevice> m_pPhyDevices;
 
