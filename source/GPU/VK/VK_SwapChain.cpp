@@ -1,0 +1,150 @@
+#include "VK_SwapChain.h"
+
+#include "VK_Backend.h"
+#include "VK_wrappar.h"
+
+namespace GPU
+{
+
+	uint32_t ChooseNumImages(const VkSurfaceCapabilitiesKHR& Capabilities)
+	{
+		uint32_t RequestedNumImage = Capabilities.minImageCount + 1;
+
+		uint32_t FinalNumImages = 0;
+
+		if ((Capabilities.maxImageCount > 0) && (RequestedNumImage > Capabilities.maxImageCount))
+		{
+			FinalNumImages = Capabilities.maxImageCount;
+		}
+		else {
+			FinalNumImages = RequestedNumImage;
+		}
+
+		if (FinalNumImages > 3)
+			FinalNumImages = 3;
+
+		return FinalNumImages;
+	}
+
+	VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR> PresentModes)
+	{
+		for (uint32_t i = 0; i < PresentModes.size(); i++)
+		{
+			if (PresentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+			{
+				VK_LOG_INFO("Selected Present Mode Is: VK_PRESENT_MODE_MALIBOX_KHR");
+				return PresentModes[i];
+			}
+		}
+		VK_LOG_INFO("Selected Present Mode Is: VK_PRESENT_MODE_FIFO_KHR");
+		return VK_PRESENT_MODE_FIFO_KHR;
+	}
+
+	VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkSurfaceFormatKHR> SurfaceFormats)
+	{
+		for (uint32_t i = 0; i < SurfaceFormats.size(); i++)
+		{
+			if ((SurfaceFormats[i].format == VK_FORMAT_B8G8R8A8_SRGB) &&
+				(SurfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR))
+			{
+				return SurfaceFormats[i];
+			}
+		}
+		VK_LOG_WARN("No Format & Color Space");
+		return SurfaceFormats[0];
+	}
+
+	VkImageView CreateImageView(const VkImage& Image, VkDevice Device, VkFormat Format, VkImageAspectFlags AspectFlags)
+	{
+		VkImageViewCreateInfo ViewInfo =
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.pNext = NULL,
+			.flags = 0,
+			.image = Image,
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,
+			.format = Format,
+			.components = {
+				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+			},
+			.subresourceRange = {
+				.aspectMask = AspectFlags,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+
+		VkImageView ImageView;
+		VkResult res = vkCreateImageView(Device, &ViewInfo, NULL, &ImageView);
+		VK_CHECK("vkCreateImageView", res);
+
+		return ImageView;
+	}
+
+	void VK_SwapChain::Create()
+	{
+		const VK_Device& pDevice = VK_Backend::Get()->GetDevice();
+
+		// # Choose num swapchain images
+		const VkSurfaceCapabilitiesKHR& SurfaceCaps = pDevice.GetSelectedDevice().m_surfaceCaps;
+		uint32_t NumImages = ChooseNumImages(SurfaceCaps);
+
+		// # Choose present mode
+		const std::vector<VkPresentModeKHR>& PresentModes = pDevice.GetSelectedDevice().m_presentModes;
+		VkPresentModeKHR PresentMode = ChoosePresentMode(PresentModes);
+
+		// # Choose swapchain surface format & color space
+		pSwChainSurfaceFormat = ChooseSurfaceFormatAndColorSpace(pDevice.GetSelectedDevice().m_surfaceFormats);
+
+		// # Create the swapchain
+		VkSwapchainCreateInfoKHR SwapChainCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+			.pNext = NULL,
+			.flags = 0,
+			.surface = VK_Backend::Get()->GetDevice().GetSurface(),
+			.minImageCount = NumImages,
+			.imageFormat = pSwChainSurfaceFormat.format,
+			.imageColorSpace = pSwChainSurfaceFormat.colorSpace,
+			.imageExtent = SurfaceCaps.currentExtent,
+			.imageArrayLayers = 1,
+			.imageUsage = (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
+			.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.queueFamilyIndexCount = 0,
+			.pQueueFamilyIndices = nullptr,
+			.preTransform = SurfaceCaps.currentTransform,
+			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+			.presentMode = PresentMode,
+			.clipped = VK_TRUE
+		};
+
+		VkResult res = vkCreateSwapchainKHR(pDevice.GetDevice(), &SwapChainCreateInfo, NULL, &pSwapChain);
+		VK_CHECK("vkCreateSwapchainKHR", res);
+		
+		// # Get the swapchain's images
+		uint32_t NumSwapChainImages = 0;
+		res = vkGetSwapchainImagesKHR(pDevice.GetDevice(), pSwapChain, &NumSwapChainImages, NULL);
+		VK_CHECK("Cannot calculate swapchain images", res);
+		assert(NumImages == NumSwapChainImages);
+
+		pImages.resize(NumSwapChainImages);
+		pImageViews.resize(NumSwapChainImages);
+
+		res = vkGetSwapchainImagesKHR(pDevice.GetDevice(), pSwapChain, &NumSwapChainImages, pImages.data());
+		VK_CHECK("Cannot get swapchain's images", res);
+
+		// # Create swapchain image views
+		for (uint32_t i = 0; i < pImageViews.size(); i++)
+		{
+			pImageViews[i] = CreateImageView(
+				pImages[i], pDevice.GetDevice(), pSwChainSurfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT
+			);
+		}
+
+	}
+
+}

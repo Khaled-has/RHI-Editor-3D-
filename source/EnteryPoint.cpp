@@ -2,20 +2,28 @@
 
 #include "Log/Log.h"
 
-#include "GPU/VK/VK_Device.h"
+#ifdef WIN32
+#include "Window/windows/WindowsWindow.h"
+#endif
 
-#include <SDL3/SDL_vulkan.h>
-#include <SDL3/SDL.h>
+#include "GPU/VK/VK_Backend.h"
 
 int main(int argc, char* argv[])
 {
 	Log::Init();
 
-	SDL_Init(SDL_INIT_VIDEO);
-	SDL_Window* pWin = SDL_CreateWindow("RHI Editor ( 3D )", 1440, 720, SDL_WINDOW_VULKAN);
+	Win::Window* pAppWin = nullptr;
 
-	GPU::VK_Device test;
-	test.Create(GPU::WinType::SDL3, pWin);
+#ifdef WIN32
+	pAppWin = Win::CreateWindowsWindow(
+		"RHI Editor ( 3D )",
+		1440, 720
+	);
+#endif
+	pAppWin->Create();
+
+	GPU::GPU_Backend* gpu_backend = GPU::CreateVulkanBackend();
+	gpu_backend->Backend_Init();
 
 	// For test
 	SDL_Event ev;
@@ -27,9 +35,11 @@ int main(int argc, char* argv[])
 			if (ev.type == SDL_EVENT_QUIT)
 				pRun = false;
 		}
-	}
 
-	test.Destroy();
+		gpu_backend->RenderBegin();
+
+		gpu_backend->RenderEnd();
+	}
 
 	return 0;
 }

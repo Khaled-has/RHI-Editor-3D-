@@ -9,11 +9,13 @@ namespace GPU {
 		GPU_Backend() {}
 		~GPU_Backend() {}
 
+		virtual bool IsDeviceSupportBackend() = 0;
+
 		virtual void Backend_Init() = 0;
 		virtual void Backend_Exit() = 0;
 
-		virtual void Render_Begin() = 0;
-		virtual void Render_End() = 0;
+		virtual void RenderBegin() = 0;
+		virtual void RenderEnd() = 0;
 	};
 
 }

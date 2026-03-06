@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <vulkan/vulkan.h>
+//#include "VK_Backend.h"
 
 #define BIN(_N) (1 << _N)
 
@@ -140,14 +141,6 @@ namespace GPU {
 		}
 	};
 
-	/*	 # The window types	  */
-	enum WinType
-	{
-		NO = 0,
-		SDL3 = 1,
-		GLFW = 2
-	};
-
 	/*	 # The Device it self	*/
 	class VK_Device
 	{
@@ -158,7 +151,7 @@ namespace GPU {
 		// # Get device
 		inline const VkInstance& GetInstance() const { return pInstance; }
 		inline const VkSurfaceKHR& GetSurface() const { return pSurface; }
-		inline const VK_PhysicalDevice& GetSelectedDevice() const { return GetSelectedDevice(); }
+		inline const VK_PhysicalDevice& GetSelectedDevice() const { return m_pPhyDevices[pSelectedPhyDevIndex]; }
 		inline const VK_PhysicalDevice& GetPhysicalDevice(uint32_t Index) const { return m_pPhyDevices[Index]; }
 		inline const VkDevice& GetDevice() const { return pDevice; }
 
@@ -172,7 +165,7 @@ namespace GPU {
 		inline uint32_t GetPhyDevCount() const { return pPhyDevCount; }
 
 		// #  Init & Destroy Vulkan context ( Instance - Surface - PhysicalDev - Device )
-		void Create(WinType pWinType, void* pAppWin);
+		void Create();
 		void Destroy();
 
 	private:
@@ -200,7 +193,7 @@ namespace GPU {
 		/* # Init functions */
 		void CreateInstance();
 		void CreateDebugCallMessenger();
-		void CreateSurface(WinType pWinType, void* pAppWin);
+		void CreateSurface();
 		void CreatePhysicalDevice();
 		void CreateDevice();
 	};

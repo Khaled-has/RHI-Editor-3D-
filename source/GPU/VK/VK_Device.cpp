@@ -1,52 +1,51 @@
 #include "VK_Device.h"
 
-#include "VK_wrappir.h"
+#include "VK_wrappar.h"
 
-//#include <GLFW/glfw3.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+
+#include "Window/Window.h"
 
 namespace GPU
 {
 
-	static const char* PrintImageUsageFlags(const VkImageUsageFlags& flags)
+	static void PrintImageUsageFlags(const VkImageUsageFlags& flags)
 	{
 
 		if (flags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
 		{
-			return "Image usage transfer src is supported";
+			VK_LOG_INFO("Image usage transfer src is supported");
 		}
 
 		if (flags & VK_IMAGE_USAGE_TRANSFER_DST_BIT)
 		{
-			return "Image usage transfer dest is supported";
+			VK_LOG_INFO("Image usage transfer dest is supported");
 		}
 
 		if (flags & VK_IMAGE_USAGE_SAMPLED_BIT)
 		{
-			return "Image usage sampled is supported";
+			VK_LOG_INFO("Image usage sampled is supported");
 		}
 
 		if (flags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 		{
-			return "Image usage color attachment is supported";
+			VK_LOG_INFO("Image usage color attachment is supported");
 		}
 
 		if (flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
 		{
-			return "Image usage depth stencil attachment is supported";
+			VK_LOG_INFO("Image usage depth stencil attachment is supported");
 		}
 
 		if (flags & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)
 		{
-			return "Image usage transient attachment is supported";
+			VK_LOG_INFO("Image usage transient attachment is supported");
 		}
 
 		if (flags & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) {
-			return "Image usage input attachment is supported";
+			VK_LOG_INFO("Image usage input attachment is supported");
 		}
-
-		return "Image usage unknown";
 	}
 
 	static const char* PrintMemoryProperty(VkMemoryPropertyFlags PropertyFlags)
@@ -99,7 +98,7 @@ namespace GPU
 			}
 		}
 
-		printf("Failed to find supported format!\n");
+		VK_LOG_ERROR("Failed to find supported format!");
 		exit(1);
 	}
 
@@ -115,12 +114,12 @@ namespace GPU
 			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
 		);
 
-		VK_LOG_INFO("Device depth format: {0} ",
+		VK_LOG_INFO("Device depth format: {0} {1} {2}",
 			DepthFormat == VK_FORMAT_D32_SFLOAT ? "VK_FORMAT_D32_SFLOAT" : "",
 			DepthFormat == VK_FORMAT_D32_SFLOAT_S8_UINT ? "VK_FORMAT_D32_SFLOAT_S8_UINT" : "",
 			DepthFormat == VK_FORMAT_D24_UNORM_S8_UINT ? "VK_FORMAT_D24_UNORM_S8_UINT" : ""
 		);
-
+		
 		return DepthFormat;
 	}
 
@@ -230,25 +229,29 @@ namespace GPU
 		return GetSelectedDevice().IsExtensionSupported(_Ext);
 	}
 
-	void VK_Device::Create(WinType pWinType, void* pAppWin)
+	void VK_Device::Create()
 	{
 		CreateInstance();
 #ifdef _ANDROID
-		// Dont't compilt it for android
+		// Dont't compile it for android
 #else
 		// Debug utils messenger
 		CreateDebugCallMessenger();
 #endif
-		CreateSurface(pWinType, pAppWin);
+		CreateSurface();
 		CreatePhysicalDevice();
 		CreateDevice();
 	}
 
 	void VK_Device::Destroy()
 	{
+		// # Destroy device
 		vkDestroyDevice(pDevice, NULL);
+		// # Destroy surface
 		vkDestroySurfaceKHR(pInstance, pSurface, NULL);
 
+		// # Destroy debug utils messenger
+#ifdef WIN32
 		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = VK_NULL_HANDLE;
 		vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(pInstance, "vkDestroyDebugUtilsMessengerEXT");
 		if (!vkDestroyDebugUtilsMessengerEXT)
@@ -257,7 +260,8 @@ namespace GPU
 			exit(1);
 		}
 		vkDestroyDebugUtilsMessengerEXT(pInstance, pDebugMessenger, NULL);
-
+#endif
+		// # Destroy instance
 		vkDestroyInstance(pInstance, NULL);
 	}
 
@@ -342,10 +346,14 @@ namespace GPU
 		VK_CHECK("vkCreateDebugUtilsMessenger", res);
 	}
 
-	void VK_Device::CreateSurface(WinType pWinType, void* pAppWin)
+	void VK_Device::CreateSurface()
 	{
+		// # Window information
+		Win::WindowType pWinType = Win::Window::GetInstance()->GetWindowType();
+		void* pAppWin = Win::Window::GetInstance()->GetWindow();
+
 		// SDL3 window
-		if (pWinType == WinType::SDL3)
+		if (pWinType == Win::WindowType::SDL3)
 		{
 			if (!SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(pAppWin), pInstance, NULL, &pSurface))
 			{
@@ -354,7 +362,7 @@ namespace GPU
 			}
 		}
 		// glfw window
-		else if (pWinType == WinType::GLFW)
+		else if (pWinType == Win::WindowType::GLFW)
 		{
 			/*if (glfwCreateWindowSurface(pInstance, static_cast<GLFWwindow*>(pAppWin), NULL, &pSurface))
 			{
@@ -468,7 +476,7 @@ namespace GPU
 			res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(PhyDev, pSurface, &(m_pPhyDevices[i].m_surfaceCaps));
 			VK_CHECK("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", res);
 
-			VK_LOG_INFO(PrintImageUsageFlags(m_pPhyDevices[i].m_surfaceCaps.supportedUsageFlags));
+			PrintImageUsageFlags(m_pPhyDevices[i].m_surfaceCaps.supportedUsageFlags);
 
 			// # Device present modes
 			uint32_t NumPresentModes = 0;

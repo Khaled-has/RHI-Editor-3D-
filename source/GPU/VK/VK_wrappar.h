@@ -1,5 +1,5 @@
-#ifndef VK_WRAPPIR_H
-#define VK_WRAPPIR_H
+#ifndef VK_WRAPPAR_H
+#define VK_WRAPPAR_H
 
 #include <assert.h>
 
