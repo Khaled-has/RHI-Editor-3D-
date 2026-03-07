@@ -40,11 +40,11 @@ namespace GPU
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkSurfaceFormatKHR> SurfaceFormats)
+	VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkSurfaceFormatKHR>& SurfaceFormats)
 	{
 		for (uint32_t i = 0; i < SurfaceFormats.size(); i++)
 		{
-			if ((SurfaceFormats[i].format == VK_FORMAT_B8G8R8A8_SRGB) &&
+			if ((SurfaceFormats[i].format == VK_FORMAT_B8G8R8A8_UNORM) &&
 				(SurfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR))
 			{
 				return SurfaceFormats[i];
@@ -145,6 +145,20 @@ namespace GPU
 			);
 		}
 
+	}
+
+	void VK_SwapChain::Destroy()
+	{
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		// # Destroy swapchain's image views
+		for (VkImageView& Im : pImageViews)
+		{
+			vkDestroyImageView(pDevice, Im, NULL);
+		}
+
+		// # Destroy swapchain
+		vkDestroySwapchainKHR(pDevice, pSwapChain, NULL);
 	}
 
 }

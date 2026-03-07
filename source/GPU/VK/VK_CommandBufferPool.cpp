@@ -21,6 +21,11 @@ namespace GPU
 		VK_CHECK("vkCreateCommandPool", res);
 	}
 
+	void VK_CommandBufferPool::Destroy()
+	{
+		vkDestroyCommandPool(VK_Backend::Get()->GetDevice().GetDevice(), pCommandPool, NULL);
+	}
+
 	void VK_CommandBufferPool::CreateCommandBuffers(uint32_t Count, VkCommandBuffer* CmdBufs)
 	{
 		VkCommandBufferAllocateInfo AllocateInfo = {
@@ -35,6 +40,14 @@ namespace GPU
 			VK_Backend::Get()->GetDevice().GetDevice(), &AllocateInfo, CmdBufs
 		);
 		VK_CHECK("vkAllocateCommandBuffers", res);
+	}
+
+	void VK_CommandBufferPool::FreeCommandBuffers(uint32_t Count, VkCommandBuffer* CmdBufs)
+	{
+		vkFreeCommandBuffers(
+			VK_Backend::Get()->GetDevice().GetDevice(), pCommandPool,
+			Count, CmdBufs
+		);
 	}
 
 	void BeginCommandBuffer(const VkCommandBuffer& CmdBuf, VkCommandBufferUsageFlags UsageFlags)

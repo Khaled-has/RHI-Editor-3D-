@@ -34,12 +34,16 @@ int main(int argc, char* argv[])
 		{
 			if (ev.type == SDL_EVENT_QUIT)
 				pRun = false;
+			else if (ev.key.key == SDLK_ESCAPE)
+				pRun = false;
 		}
 
 		gpu_backend->RenderBegin();
 
 		gpu_backend->RenderEnd();
 	}
+
+	gpu_backend->Backend_Exit();
 
 	return 0;
 }

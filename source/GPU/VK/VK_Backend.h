@@ -6,6 +6,8 @@
 #include "VK_Device.h"
 #include "VK_SwapChain.h"
 #include "VK_CommandBufferPool.h"
+#include "VK_Queue.h"
+#include "VK_Thread.h"
 
 namespace GPU {
 
@@ -30,6 +32,10 @@ namespace GPU {
 		inline const VK_Device& GetDevice() { return pDevice; }
 		inline const VK_SwapChain& GetSwapChain() { return pSwapChain; }
 		inline const VK_CommandBufferPool& GetCmdBufPool() { return pCmdBufPool; }
+		inline const VK_Queue& GetQueue() { return pQueue; }
+		inline const VK_Thread& GetLoadThread() { return pLoadThread; }
+
+		inline const VkCommandBuffer& GetCmdBuf(uint32_t Index) { return pCmdBufs[Index]; }
 
 	private:
 		static VK_Backend* pVkInstance;
@@ -37,6 +43,10 @@ namespace GPU {
 		VK_Device pDevice;
 		VK_SwapChain pSwapChain;
 		VK_CommandBufferPool pCmdBufPool;
+		VK_Queue pQueue;
+		VK_Thread pLoadThread;
+
+		std::vector<VkCommandBuffer> pCmdBufs;
 	};
 
 	inline VK_Backend* CreateVulkanBackend() { return new VK_Backend; }

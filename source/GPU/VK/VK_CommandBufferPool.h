@@ -13,7 +13,10 @@ namespace GPU
 		~VK_CommandBufferPool() {}
 
 		void Create();
+		void Destroy();
+
 		void CreateCommandBuffers(uint32_t Count, VkCommandBuffer* CmdBufs);
+		void FreeCommandBuffers(uint32_t Count, VkCommandBuffer* CmdBufs);
 
 	private:
 		VkCommandPool pCommandPool = VK_NULL_HANDLE;

@@ -155,7 +155,8 @@ namespace GPU {
 		inline const VK_PhysicalDevice& GetPhysicalDevice(uint32_t Index) const { return m_pPhyDevices[Index]; }
 		inline const VkDevice& GetDevice() const { return pDevice; }
 
-		inline uint32_t GetSelectedQFamily() const { return pSelectedPhyDevQueueIndex; }
+		inline uint32_t GetSelectedQueue() const { return pSelectedPhyDevQueueIndex; }
+		inline uint32_t GetSelectedQFamily() const { return pSelectedPhyDevQueueFamilyIndex; }
 
 		// # Device checks
 		bool IsExtSupported(const char* _Ext, uint32_t pPhyDeviceIndex) const;
@@ -181,9 +182,10 @@ namespace GPU {
 		} pInstanceVersion;
 
 		/*	# Physical devices  */
-		uint32_t pPhyDevCount			   = 0;
-		uint32_t pSelectedPhyDevIndex	   = 0;
-		uint32_t pSelectedPhyDevQueueIndex = 0;
+		uint32_t pPhyDevCount					 = 0;
+		uint32_t pSelectedPhyDevIndex			 = 0;
+		uint32_t pSelectedPhyDevQueueIndex	     = 0;
+		uint32_t pSelectedPhyDevQueueFamilyIndex = 0;
 
 		std::vector<VK_PhysicalDevice> m_pPhyDevices;
 

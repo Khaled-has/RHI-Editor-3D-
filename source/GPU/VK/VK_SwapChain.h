@@ -17,6 +17,9 @@ namespace GPU
 		~VK_SwapChain() {}
 
 		void Create();
+		void Destroy();
+
+		inline const VkSwapchainKHR& GetSwapchain() const { return pSwapChain; }
 
 		inline uint32_t GetImageCount() const { return (uint32_t)pImages.size(); }
 

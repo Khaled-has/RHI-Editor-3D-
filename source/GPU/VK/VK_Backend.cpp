@@ -16,12 +16,31 @@ namespace GPU {
 
 	void VK_Backend::Backend_Init()
 	{
+		// 1 # Create device
 		pDevice.Create();
+		// 2 # Create swapchain
 		pSwapChain.Create();
+		// 3 # Create command buffer pool
+		pCmdBufPool.Create();
+		// 4 # Create command buffers
+		pCmdBufs.resize(pSwapChain.GetImageCount());
+		pCmdBufPool.CreateCommandBuffers(pSwapChain.GetImageCount(), pCmdBufs.data());
+		// 5 # Create queue
+		pQueue.Create();
 	}
 
 	void VK_Backend::Backend_Exit()
 	{
+		// # Destroy queue
+		pQueue.Destroy();
+		// # Destroy swapchain
+		pSwapChain.Destroy();
+		// # Free command buffers
+		pCmdBufPool.FreeCommandBuffers((uint32_t)pCmdBufs.size(), pCmdBufs.data());
+		// # Destroy command buffer pool
+		pCmdBufPool.Destroy();
+		// # Destroy device
+		pDevice.Destroy();
 	}
 
 	void VK_Backend::RenderBegin()
