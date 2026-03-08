@@ -36,7 +36,7 @@ namespace GPU {
 		inline const VK_Thread& GetLoadThread() { return pLoadThread; }
 
 		inline const VkCommandBuffer& GetCmdBuf(uint32_t Index) { return pCmdBufs[Index]; }
-
+		inline const VkCommandBuffer& GetCopyCmdBuf() const { return pCopyCmdBuf; }
 	private:
 		static VK_Backend* pVkInstance;
 
@@ -47,6 +47,7 @@ namespace GPU {
 		VK_Thread pLoadThread;
 
 		std::vector<VkCommandBuffer> pCmdBufs;
+		VkCommandBuffer pCopyCmdBuf;	// It's hard coded, I will use another thread later on.
 	};
 
 	inline VK_Backend* CreateVulkanBackend() { return new VK_Backend; }

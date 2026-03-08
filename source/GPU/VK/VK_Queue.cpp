@@ -87,7 +87,7 @@ namespace GPU
 		return ImageIndex;
 	}
 
-	void VK_Queue::SubmitSync(const VkCommandBuffer& CmdBuf)
+	void VK_Queue::SubmitSync(const VkCommandBuffer& CmdBuf) const
 	{
 		static VkPipelineStageFlags waitFlags[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
@@ -107,7 +107,7 @@ namespace GPU
 		VK_CHECK("vkQueueSubmit", res);
 	}
 
-	void VK_Queue::SubmitAsync(const VkCommandBuffer* CmdBuf, uint32_t Count)
+	void VK_Queue::SubmitAsync(const VkCommandBuffer* CmdBuf, uint32_t Count) const 
 	{
 		static VkPipelineStageFlags waitFlags[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
@@ -149,7 +149,7 @@ namespace GPU
 		WaitIdle();
 	}
 
-	void VK_Queue::WaitIdle()
+	void VK_Queue::WaitIdle() const 
 	{
 		VkResult res = vkQueueWaitIdle(pQueue);
 		VK_CHECK("vkQueueWaitIdle", res);

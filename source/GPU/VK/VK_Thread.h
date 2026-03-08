@@ -16,12 +16,13 @@ namespace GPU
 		~VK_Thread() {}
 
 		void Create();
+		void Destroy();
 
 		void FuncRunOnThread(std::function<void(const VkCommandBuffer& CmdBuf)> Func);
 
 	private:
 		VK_CommandBufferPool pCmdBufPool{};
-		VkCommandBuffer pCmdBuf;
+		VkCommandBuffer pCmdBuf = VK_NULL_HANDLE;
 	};
 
 }

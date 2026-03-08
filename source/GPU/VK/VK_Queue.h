@@ -22,11 +22,11 @@ namespace GPU
 
 		uint32_t AcquireNextImage();
 
-		void SubmitSync(const VkCommandBuffer& CmdBuf);
-		void SubmitAsync(const VkCommandBuffer* CmdBuf, uint32_t Count = 1);
+		void SubmitSync(const VkCommandBuffer& CmdBuf) const;
+		void SubmitAsync(const VkCommandBuffer* CmdBuf, uint32_t Count = 1) const;
 
 		void Present(uint32_t ImageIndex);
-		void WaitIdle();
+		void WaitIdle() const;
 
 	private:
 		VkQueue pQueue = VK_NULL_HANDLE;

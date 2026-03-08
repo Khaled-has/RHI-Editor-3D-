@@ -25,7 +25,10 @@ namespace GPU {
 		// 4 # Create command buffers
 		pCmdBufs.resize(pSwapChain.GetImageCount());
 		pCmdBufPool.CreateCommandBuffers(pSwapChain.GetImageCount(), pCmdBufs.data());
-		// 5 # Create queue
+		pCmdBufPool.CreateCommandBuffers(1, &pCopyCmdBuf);
+		// 5 # Create load thread
+		pLoadThread.Create();
+		// 6 # Create queue
 		pQueue.Create();
 	}
 
@@ -39,6 +42,8 @@ namespace GPU {
 		pCmdBufPool.FreeCommandBuffers((uint32_t)pCmdBufs.size(), pCmdBufs.data());
 		// # Destroy command buffer pool
 		pCmdBufPool.Destroy();
+		// # Destroy load thread
+		pLoadThread.Destroy();
 		// # Destroy device
 		pDevice.Destroy();
 	}
