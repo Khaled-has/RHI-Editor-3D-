@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "VK_Buffer.h"
+
 namespace GPU
 {
 	// # Type of binding attribute
@@ -24,7 +26,7 @@ namespace GPU
 		VkDescriptorType pDescType;
 		VkShaderStageFlags pStageFlag;
 		VK_BindingInfoType pBindingType;
-		//VK_Buffer* pBuffer = NULL;
+		VK_Buffer* pBuffer;
 		//VK_Texture* pTexture = NULL;
 		//std::vector<VK_Buffer>* pUniformBuffers = NULL;
 	};
@@ -36,7 +38,10 @@ namespace GPU
 		VK_GraphicsPipeline() {}
 		~VK_GraphicsPipeline() {}
 
-		void Create(const std::vector<VK_PipelineBinding>* pBindingsInfo);
+		void Create(
+			const std::vector<VK_PipelineBinding>* pBindingsInfo, 
+			const VkShaderModule& pVs, const VkShaderModule& pFs
+		);
 		void Destroy();
 
 		void Bind(uint32_t ImageIndex);
@@ -53,6 +58,8 @@ namespace GPU
 		void CreateDescriptorLayout(const std::vector<VK_PipelineBinding>* pBindingsInfo);
 		void AllocateDescriptorSets();
 		void UpdateDescriptorSets(const std::vector<VK_PipelineBinding>* pBindingsInfo);
+
+		void CreatePipeline(const VkShaderModule& pVs, const VkShaderModule& pFs);
 	};
 
 }

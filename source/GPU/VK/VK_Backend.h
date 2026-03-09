@@ -8,6 +8,7 @@
 #include "VK_CommandBufferPool.h"
 #include "VK_Queue.h"
 #include "VK_Thread.h"
+#include "VK_Batch.h"
 
 namespace GPU {
 
@@ -32,7 +33,7 @@ namespace GPU {
 		inline const VK_Device& GetDevice() { return pDevice; }
 		inline const VK_SwapChain& GetSwapChain() { return pSwapChain; }
 		inline const VK_CommandBufferPool& GetCmdBufPool() { return pCmdBufPool; }
-		inline const VK_Queue& GetQueue() { return pQueue; }
+		inline VK_Queue& GetQueue() { return pQueue; }
 		inline const VK_Thread& GetLoadThread() { return pLoadThread; }
 
 		inline const VkCommandBuffer& GetCmdBuf(uint32_t Index) { return pCmdBufs[Index]; }
@@ -47,7 +48,9 @@ namespace GPU {
 		VK_Thread pLoadThread;
 
 		std::vector<VkCommandBuffer> pCmdBufs;
-		VkCommandBuffer pCopyCmdBuf;	// It's hard coded, I will use another thread later on.
+		VkCommandBuffer pCopyCmdBuf = VK_NULL_HANDLE;	// It's hard coded, I will use another thread later on.
+
+		VK_Batch pBatch;
 	};
 
 	inline VK_Backend* CreateVulkanBackend() { return new VK_Backend; }

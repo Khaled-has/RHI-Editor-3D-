@@ -25,6 +25,8 @@ namespace GPU
 
 		void Update(const void* pData, size_t pSize);
 
+		const VK_BufferAndMemory& GetBuffer() { return pBufferAndMemory; }
+
 	private:
 		VK_BufferAndMemory pBufferAndMemory;
 	};

@@ -107,7 +107,7 @@ namespace GPU
 		VK_CHECK("vkQueueSubmit", res);
 	}
 
-	void VK_Queue::SubmitAsync(const VkCommandBuffer* CmdBuf, uint32_t Count) const 
+	void VK_Queue::SubmitAsync(const VkCommandBuffer* CmdBuf, uint32_t Count) 
 	{
 		static VkPipelineStageFlags waitFlags[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 

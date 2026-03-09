@@ -23,7 +23,7 @@ target_sources(${PROJECT_NAME} PRIVATE
  "source/EnteryPoint.cpp"
  "source/GPU/VK/VK_Backend.cpp" "source/Log/Log.cpp" "source/GPU/VK/VK_Device.cpp" "source/Window/windows/WindowsWindow.cpp" "source/GPU/VK/VK_SwapChain.cpp" "source/GPU/VK/VK_CommandBufferPool.h" "source/GPU/VK/VK_CommandBufferPool.cpp" "source/GPU/VK/VK_Thread.cpp" 
  "source/GPU/VK/VK_Queue.cpp"
- "source/GPU/VK/VK_Batch.h" "source/GPU/VK/VK_Batch.cpp" "source/GPU/VK/VK_GraphicsPipeline.h" "source/GPU/VK/VK_GraphicsPipeline.cpp" "source/GPU/VK/VK_Buffer.cpp" "source/GPU/VK/VK_wrappar.cpp" "source/GPU/VK/VK_Shader.cpp"
+ "source/GPU/VK/VK_Batch.cpp" "source/GPU/VK/VK_GraphicsPipeline.cpp" "source/GPU/VK/VK_Buffer.cpp" "source/GPU/VK/VK_wrappar.cpp" "source/GPU/VK/VK_Shader.cpp"
  ${SHADERC_CPP})
 
 # Target include directories

@@ -30,10 +30,14 @@ namespace GPU {
 		pLoadThread.Create();
 		// 6 # Create queue
 		pQueue.Create();
+		
+		pBatch.Create();
 	}
 
 	void VK_Backend::Backend_Exit()
 	{
+		pBatch.Destroy();
+
 		// # Destroy queue
 		pQueue.Destroy();
 		// # Destroy swapchain
@@ -54,6 +58,7 @@ namespace GPU {
 
 	void VK_Backend::RenderEnd()
 	{
+		pBatch.Draw();
 	}
 
 }

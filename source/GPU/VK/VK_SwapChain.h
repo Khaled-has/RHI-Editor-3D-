@@ -23,8 +23,10 @@ namespace GPU
 
 		inline uint32_t GetImageCount() const { return (uint32_t)pImages.size(); }
 
-		inline const VkImage& GetImage(uint32_t Index) { return pImages[Index]; }
-		inline const VkImageView& GetImageView(uint32_t Index) { return pImageViews[Index]; }
+		inline const VkImage& GetImage(uint32_t Index) const { return pImages[Index]; }
+		inline const VkImageView& GetImageView(uint32_t Index) const { return pImageViews[Index]; }
+
+		inline VkSurfaceFormatKHR GetSurfaceFormat() const { return pSwChainSurfaceFormat; }
 
 	private:
 		VkSwapchainKHR pSwapChain = VK_NULL_HANDLE;

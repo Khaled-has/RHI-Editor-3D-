@@ -24,7 +24,7 @@ namespace GPU
 
 	VkShaderModule CreateShaderModuleFromBinary(std::string pFileName)
 	{
-		std::string pFinalPath = std::string(RES_PATH) + "Shaders/" + "spv/" + pFileName;
+		std::string pFinalPath = std::string(RES_PATH) + "GLSL/" + "spv/" + pFileName + ".spv";
 		auto pCode = ReadFile(pFinalPath);
 
 		VkShaderModuleCreateInfo CreateInfo = {
@@ -47,6 +47,14 @@ namespace GPU
 	{
 		CreateVertexShader(pVertex);
 		CreateFragmentShader(pFragment);
+	}
+
+	void VK_Shader::Destroy()
+	{
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		vkDestroyShaderModule(pDevice, pVS, NULL);
+		vkDestroyShaderModule(pDevice, pFS, NULL);
 	}
 
 	void VK_Shader::CreateVertexShader(const char* pVertex)
