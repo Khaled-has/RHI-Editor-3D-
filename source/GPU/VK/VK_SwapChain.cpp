@@ -3,6 +3,8 @@
 #include "VK_Backend.h"
 #include "VK_wrappar.h"
 
+#include "Window/Window.h"
+
 namespace GPU
 {
 
@@ -145,11 +147,38 @@ namespace GPU
 			);
 		}
 
+		/* 
+			# If the selected device does't support dynamic rendering
+			  then we want to create a RenderPass & Framebuffers
+		*/
+		if (!VK_Backend::Get()->GetDevice().GetSelectedDevice().pIsDynamicSupported)
+		{
+			CreateRenderPass();
+			CreateFramebuffers();
+
+			VK_LOG_INFO("Using RenderPass");
+		}
+		else
+		{
+			VK_LOG_INFO("Using Dynamic rendering");
+		}
+
 	}
 
 	void VK_SwapChain::Destroy()
 	{
 		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		// # Destroy RenderPass & Framebuffers
+		if (!VK_Backend::Get()->GetDevice().GetSelectedDevice().pIsDynamicSupported)
+		{
+			for (uint32_t i = 0; i < pFramebuffers.size(); i++)
+			{
+				vkDestroyFramebuffer(pDevice, pFramebuffers[i], NULL);
+			}
+
+			vkDestroyRenderPass(pDevice, pRenderPass, NULL);
+		}
 
 		// # Destroy swapchain's image views
 		for (VkImageView& Im : pImageViews)
@@ -159,6 +188,112 @@ namespace GPU
 
 		// # Destroy swapchain
 		vkDestroySwapchainKHR(pDevice, pSwapChain, NULL);
+	}
+
+	void VK_SwapChain::CreateRenderPass()
+	{
+		const VK_Device& pDevice = VK_Backend::Get()->GetDevice();
+
+		VkAttachmentDescription ColorAttachDesc = {
+			.flags = 0,
+			.format = pSwChainSurfaceFormat.format,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+		};
+
+		VkAttachmentReference ColorAttachRef = {
+			.attachment = 0,
+			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		};
+
+		VkFormat DepthFormat = pDevice.GetSelectedDevice().m_depthFormat;
+
+		VkAttachmentDescription DepthAttachDesc = {
+			.flags = 0,
+			.format = DepthFormat,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		};
+
+		VkAttachmentReference DepthAttachmentRef = {
+			.attachment = 1,
+			.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		};
+
+		VkSubpassDescription SubpassDesc = {
+			.flags = 0,
+			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+			.inputAttachmentCount = 0,
+			.pInputAttachments = NULL,
+			.colorAttachmentCount = 1,
+			.pColorAttachments = &ColorAttachRef,
+			.pResolveAttachments = NULL,
+			.pDepthStencilAttachment = NULL,//m_depthEnabled ? &DepthAttachmentRef : NULL,
+			.preserveAttachmentCount = 0,
+			.pPreserveAttachments = NULL
+		};
+
+		std::vector<VkAttachmentDescription> Attachments;
+		Attachments.push_back(ColorAttachDesc);
+
+		//if (m_depthEnabled)
+		//{
+		//	Attachments.push_back(DepthAttachDesc);
+		//}
+
+		VkRenderPassCreateInfo RenderCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+			.pNext = NULL,
+			.flags = 0,
+			.attachmentCount = (uint32_t)Attachments.size(),
+			.pAttachments = Attachments.data(),
+			.subpassCount = 1,
+			.pSubpasses = &SubpassDesc,
+			.dependencyCount = 0,
+			.pDependencies = NULL
+		};
+
+		VkResult res = vkCreateRenderPass(pDevice.GetDevice(), &RenderCreateInfo, NULL, &pRenderPass);
+		VK_CHECK("vkCreateRenderPass", res);
+	}
+
+	void VK_SwapChain::CreateFramebuffers()
+	{
+		pFramebuffers.resize(GetImageCount());
+
+		std::pair<uint32_t, uint32_t> pWinSize = Win::Window::GetInstance()->GetWindowSize();
+
+		for (uint32_t i = 0; i < GetImageCount(); i++)
+		{
+			std::vector<VkImageView> Attachments;
+			Attachments.push_back(GetImageView(i));
+
+			VkFramebufferCreateInfo CreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+				.renderPass = pRenderPass,
+				.attachmentCount = (uint32_t)Attachments.size(),
+				.pAttachments = Attachments.data(),
+				.width = pWinSize.first,
+				.height = pWinSize.second,
+				.layers = 1
+			};
+
+			VkResult res = vkCreateFramebuffer(
+				VK_Backend::Get()->GetDevice().GetDevice(), &CreateInfo,
+				NULL, &pFramebuffers[i]
+			);
+			VK_CHECK("vkCreateFramebuffer", res);
+		}
 	}
 
 }

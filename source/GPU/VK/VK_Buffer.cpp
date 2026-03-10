@@ -108,7 +108,16 @@ namespace GPU
 		CopyBuffer(pBufferAndMemory.pBuffer, StaginBuffer.pBuffer, pSize);
 
 		// # Step 7: release the resources of the staging buffer
+		vkFreeMemory(pDevice, StaginBuffer.pMemory, NULL);
 		vkDestroyBuffer(pDevice, StaginBuffer.pBuffer, NULL);
+	}
+
+	void VK_Buffer::Destroy()
+	{
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		vkFreeMemory(pDevice, pBufferAndMemory.pMemory, NULL);
+		vkDestroyBuffer(pDevice, pBufferAndMemory.pBuffer, NULL);
 	}
 
 	void VK_Buffer::Update(const void* pData, size_t pSize)

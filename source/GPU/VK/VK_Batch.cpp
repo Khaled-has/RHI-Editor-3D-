@@ -3,6 +3,8 @@
 #include "VK_wrappar.h"
 #include "VK_Backend.h"
 
+#include <functional>
+
 namespace GPU
 {
 	void VK_Batch::Create()
@@ -29,13 +31,15 @@ namespace GPU
 
 		pGraphPipeline.Create(&infos, pShader.GetVertexShader(), pShader.GetFragmentShader());
 
-		RecordCommandBuffers();
+		// # Record command buffers
+		RecordCommandBuffer(BIND_COMMAND_DRAW_FN(&GPU::VK_Batch::DrawCommand));
 	}
 
 	void VK_Batch::Destroy()
 	{
-		pShader.Destroy();
 		pGraphPipeline.Destroy();
+		pShader.Destroy();
+		pBuffer.Destroy();
 	}
 
 	void VK_Batch::Draw()
@@ -49,45 +53,9 @@ namespace GPU
 		pQueue.Present(ImageIndex);
 	}
 
-	void VK_Batch::RecordCommandBuffers()
+	void VK_Batch::DrawCommand(const VkCommandBuffer& CmdBuf, uint32_t ImageIndex)
 	{
-		const VkSurfaceFormatKHR pFormat = VK_Backend::Get()->GetSwapChain().GetSurfaceFormat();
-
-		for (uint32_t i = 0; i < VK_Backend::Get()->GetSwapChain().GetImageCount(); i++)
-		{
-			const VkCommandBuffer& CmdBuf = VK_Backend::Get()->GetCmdBuf(i);
-			const VkImage& Image = VK_Backend::Get()->GetSwapChain().GetImage(i);
-
-			BeginCommandBuffer(CmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-
-			ImageMemBarrier(
-				CmdBuf, Image, pFormat.format,
-				VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1
-			);
-
-			// # Begin rendering with dynamic only rendering for now
-			VkClearValue ClearColor = {
-				.color = {1.0, 0.0, 0.0, 1.0}
-			};
-			VkClearValue DepthValue = {
-				.depthStencil = {.depth = 1.0f, .stencil = 0}
-			};
-
-			BeginDynamicRendering(CmdBuf, i, &ClearColor, &DepthValue);
-
-			pGraphPipeline.Bind(i);
-
-			vkCmdDraw(CmdBuf, 3, 1, 0, 0);
-
-			vkCmdEndRendering(CmdBuf);
-
-			ImageMemBarrier(
-				CmdBuf, Image, pFormat.format,
-				VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1
-			);
-
-			VkResult res = vkEndCommandBuffer(CmdBuf);
-			VK_CHECK("vkEndCommandBuffer", res);
-		}
+		pGraphPipeline.Bind(ImageIndex);
+		vkCmdDraw(CmdBuf, 3, 1, 0, 0);
 	}
 }

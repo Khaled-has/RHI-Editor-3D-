@@ -3,6 +3,8 @@
 #include "VK_Backend.h"
 #include "VK_wrappar.h"
 
+#include "Window/Window.h"
+
 namespace GPU
 {
 
@@ -61,6 +63,86 @@ namespace GPU
 
 		VkResult res = vkBeginCommandBuffer(CmdBuf, &Info);
 		VK_CHECK("vkBeginCommandBuffer", res);
+	}
+
+	void RecordCommandBuffer(const std::function<void(const VkCommandBuffer&, uint32_t ImageIndex)>& DrawCommand)
+	{
+		const VkSurfaceFormatKHR pFormat = VK_Backend::Get()->GetSwapChain().GetSurfaceFormat();
+		const bool pIsDynamicSupported = VK_Backend::Get()->GetDevice().GetSelectedDevice().pIsDynamicSupported;
+
+		const VkRenderPass& pRenderPass = VK_Backend::Get()->GetSwapChain().GetRenderPass();
+
+		// # RenderPass begin info
+		VkClearValue pClearColor;
+		pClearColor.color = { 0.0, 0.0, 0.0, 1.0 };
+
+		VkRenderPassBeginInfo RenderPassBeginInfo = {
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+			.pNext = NULL,
+			.renderPass = pRenderPass,
+			.renderArea = {
+				.offset = {
+					.x = 0, .y = 0
+				},
+				.extent = {
+					.width = Win::Window::GetInstance()->GetWindowSize().first,
+					.height = Win::Window::GetInstance()->GetWindowSize().second
+				}
+			},
+			.clearValueCount = 1,
+			.pClearValues = &pClearColor,
+		};
+
+		for (uint32_t i = 0; i < VK_Backend::Get()->GetSwapChain().GetImageCount(); i++)
+		{
+			const VkCommandBuffer& CmdBuf = VK_Backend::Get()->GetCmdBuf(i);
+			const VkImage& Image = VK_Backend::Get()->GetSwapChain().GetImage(i);
+
+			BeginCommandBuffer(CmdBuf, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+
+			// # Begin rendering with Dynamic
+			if (pIsDynamicSupported)
+			{
+				VkClearValue DepthValue = {
+					.depthStencil = {.depth = 1.0f, .stencil = 0}
+				};
+
+				ImageMemBarrier(
+					CmdBuf, Image, pFormat.format,
+					VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1
+				);
+
+				BeginDynamicRendering(CmdBuf, i, &pClearColor, &DepthValue);
+			}
+			// # Begin rendering with RenderPass
+			else
+			{
+				RenderPassBeginInfo.framebuffer = VK_Backend::Get()->GetSwapChain().GetFramebuffer(i);
+				vkCmdBeginRenderPass(CmdBuf, &RenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+			}
+
+			// # Do the draw command
+			DrawCommand(CmdBuf, i);
+
+			// # End rendering with Dynamic
+			if (pIsDynamicSupported)
+			{
+				vkCmdEndRendering(CmdBuf);
+
+				ImageMemBarrier(
+					CmdBuf, Image, pFormat.format,
+					VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1
+				);
+			}
+			// # End rendering with RenderPass
+			else
+			{
+				vkCmdEndRenderPass(CmdBuf);
+			}
+
+			VkResult res = vkEndCommandBuffer(CmdBuf);
+			VK_CHECK("vkEndCommandBuffer", res);
+		}
 	}
 
 }

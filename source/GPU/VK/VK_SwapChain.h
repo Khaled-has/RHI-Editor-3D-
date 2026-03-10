@@ -26,15 +26,25 @@ namespace GPU
 		inline const VkImage& GetImage(uint32_t Index) const { return pImages[Index]; }
 		inline const VkImageView& GetImageView(uint32_t Index) const { return pImageViews[Index]; }
 
+		inline const VkFramebuffer& GetFramebuffer(uint32_t Index) const { return pFramebuffers[Index]; }
+
 		inline VkSurfaceFormatKHR GetSurfaceFormat() const { return pSwChainSurfaceFormat; }
+
+		inline const VkRenderPass& GetRenderPass() const { return pRenderPass; }
 
 	private:
 		VkSwapchainKHR pSwapChain = VK_NULL_HANDLE;
+		VkRenderPass pRenderPass  = VK_NULL_HANDLE;
+
+		std::vector<VkFramebuffer> pFramebuffers;
 
 		std::vector<VkImage> pImages;
 		std::vector<VkImageView> pImageViews;
 
 		VkSurfaceFormatKHR pSwChainSurfaceFormat{};
+
+		void CreateRenderPass();
+		void CreateFramebuffers();
 	};
 
 }

@@ -117,6 +117,7 @@ namespace GPU {
 		std::vector<VkPresentModeKHR> m_presentModes;
 		VkPhysicalDeviceFeatures m_features;
 		VkFormat m_depthFormat;
+		bool pIsDynamicSupported;
 		struct {
 			int Variant = 0;
 			int Major = 0;

@@ -23,7 +23,7 @@ namespace GPU
 	{
 		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
 
-		vkFreeDescriptorSets(pDevice, pDescriptorPool, (uint32_t)pDescriptorSets.size(), pDescriptorSets.data());
+		//vkFreeDescriptorSets(pDevice, pDescriptorPool, (uint32_t)pDescriptorSets.size(), pDescriptorSets.data());
 		vkDestroyDescriptorSetLayout(pDevice, pDescriptorSetLayout, NULL);
 		vkDestroyDescriptorPool(pDevice, pDescriptorPool, NULL);
 
@@ -304,7 +304,7 @@ namespace GPU
 		};
 
 		VkFormat ColorFormat = VK_Backend::Get()->GetSwapChain().GetSurfaceFormat().format;
-		VkFormat DepthFormat = VK_FORMAT_D24_UNORM_S8_UINT; // Hard coded for now.
+		VkFormat DepthFormat = VK_Backend::Get()->GetDevice().GetSelectedDevice().m_depthFormat;
 		VkPipelineRenderingCreateInfo RenderingInfo = {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
 			.pNext = NULL,
@@ -327,7 +327,7 @@ namespace GPU
 
 		VkGraphicsPipelineCreateInfo GPipelineInfo = {
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-			.pNext = /*PipelineV.RenderPass ? NULL : */ &RenderingInfo, // Hrad coded for now.
+			.pNext = VK_Backend::Get()->GetDevice().GetSelectedDevice().pIsDynamicSupported ? &RenderingInfo : NULL,
 			.stageCount = (sizeof(ShaderStagesCreateInfo) / sizeof(VkPipelineShaderStageCreateInfo)),
 			.pStages = &ShaderStagesCreateInfo[0],
 			.pVertexInputState = &VertexInputInfo,
@@ -338,7 +338,7 @@ namespace GPU
 			.pDepthStencilState = &DepthStencilCreateInfo,
 			.pColorBlendState = &BlendCreateInfo,
 			.layout = pPipelineLayout,
-			.renderPass = NULL, // Hard coded for now.
+			.renderPass = VK_Backend::Get()->GetSwapChain().GetRenderPass(),
 			.subpass = 0,
 			.basePipelineHandle = VK_NULL_HANDLE,
 			.basePipelineIndex = -1

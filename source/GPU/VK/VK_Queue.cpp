@@ -116,6 +116,7 @@ namespace GPU
 			.pNext = NULL,
 			.waitSemaphoreCount = 1,
 			.pWaitSemaphores = &pImageAvailableSems[pFrameIndex],
+			.pWaitDstStageMask = waitFlags,
 			.commandBufferCount = Count,
 			.pCommandBuffers = CmdBuf,
 			.signalSemaphoreCount = 1,

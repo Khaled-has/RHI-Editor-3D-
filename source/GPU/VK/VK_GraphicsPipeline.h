@@ -28,7 +28,7 @@ namespace GPU
 		VK_BindingInfoType pBindingType;
 		VK_Buffer* pBuffer;
 		//VK_Texture* pTexture = NULL;
-		//std::vector<VK_Buffer>* pUniformBuffers = NULL;
+		std::vector<VK_Buffer>* pUniformBuffers = NULL;
 	};
 
 	// # The pipeline it self

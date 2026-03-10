@@ -232,7 +232,7 @@ namespace GPU
 	void VK_Device::Create()
 	{
 		CreateInstance();
-#ifdef _ANDROID
+#ifdef ANDROID
 		// Dont't compile it for android
 #else
 		// Debug utils messenger
@@ -557,20 +557,24 @@ namespace GPU
 		if (Instance_is_1_3_or_more && DeviceSupportsDynamicRendering)
 		{
 			VK_LOG_INFO("The Vulkan instance and device support dynamic rendering as a core feature");
+			m_pPhyDevices[pSelectedPhyDevIndex].pIsDynamicSupported = true;
 		}
 		else if (pInstanceVersion.Minor == 2)
 		{
 			if (DeviceSupportsDynamicRendering)
 			{
 				DevExts.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+				m_pPhyDevices[pSelectedPhyDevIndex].pIsDynamicSupported = true;
 			}
 			else
 			{
 				VK_LOG_WARN("The system doesn't support dynamic rendering");
+				m_pPhyDevices[pSelectedPhyDevIndex].pIsDynamicSupported = false;
 			}
 		}
 		else {
 			VK_LOG_WARN("The system doesn't support dynamic rendering");
+			m_pPhyDevices[pSelectedPhyDevIndex].pIsDynamicSupported = false;
 		}
 
 		if (GetSelectedDevice().m_features.geometryShader == VK_FALSE)

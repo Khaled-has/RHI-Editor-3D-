@@ -1,7 +1,11 @@
 #ifndef VK_COMMANDBUFFERPOOL_H
 #define VK_COMMANDBUFFERPOOL_H
 
+#include <functional>
+
 #include <vulkan/vulkan.h>
+
+#define BIND_COMMAND_DRAW_FN(x) std::bind(x, this, std::placeholders::_1, std::placeholders::_2)
 
 namespace GPU
 {
@@ -23,6 +27,7 @@ namespace GPU
 	};
 
 	void BeginCommandBuffer(const VkCommandBuffer& CmdBuf, VkCommandBufferUsageFlags UsageFlags);
+	void RecordCommandBuffer(const std::function<void(const VkCommandBuffer&, uint32_t ImageIndex)>& DrawCommand);
 
 }
 

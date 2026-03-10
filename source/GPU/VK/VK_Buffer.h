@@ -22,6 +22,7 @@ namespace GPU
 		~VK_Buffer() {}
 
 		void Create(const void* pData, size_t pSize);
+		void Destroy();
 
 		void Update(const void* pData, size_t pSize);
 

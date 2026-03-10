@@ -25,9 +25,10 @@ namespace GPU
 	private:
 		VK_GraphicsPipeline pGraphPipeline;
 		VK_Buffer pBuffer;
+		std::vector<VK_Buffer> pUniforms;
 		VK_Shader pShader;
 
-		void RecordCommandBuffers();
+		void DrawCommand(const VkCommandBuffer& CmdBuf, uint32_t ImageIndex);
 	};
 
 }
