@@ -24,13 +24,14 @@ target_sources(${PROJECT_NAME} PRIVATE
  "source/GPU/VK/VK_Backend.cpp" "source/Log/Log.cpp" "source/GPU/VK/VK_Device.cpp" "source/Window/windows/WindowsWindow.cpp" "source/GPU/VK/VK_SwapChain.cpp" "source/GPU/VK/VK_CommandBufferPool.h" "source/GPU/VK/VK_CommandBufferPool.cpp" "source/GPU/VK/VK_Thread.cpp" 
  "source/GPU/VK/VK_Queue.cpp"
  "source/GPU/VK/VK_Batch.cpp" "source/GPU/VK/VK_GraphicsPipeline.cpp" "source/GPU/VK/VK_Buffer.cpp" "source/GPU/VK/VK_wrappar.cpp" "source/GPU/VK/VK_Shader.cpp"
- ${SHADERC_CPP})
+ ${SHADERC_CPP} "source/GPU/GPU_Buffer.cpp" "source/GPU/GPU_Batch.cpp")
 
 # Target include directories
 target_include_directories(${PROJECT_NAME} PRIVATE
 						"${CMAKE_SOURCE_DIR}/source"				    # source
 						"${VULKAN_PATH}/include"					    # VK
 						"${CMAKE_SOURCE_DIR}/extern/spdlog/include"     # Spdlog
+						"${CMAKE_SOURCE_DIR}/extern/glm"				# glm
 )
 
 # Target link libararise

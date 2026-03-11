@@ -72,7 +72,21 @@ namespace GPU
 		pQueue.WaitIdle();
 	}
 
-	void VK_Buffer::Create(const void* pData, size_t pSize)
+	void VK_Buffer::Create(const void* pData, size_t pSize, RHI::GPU_BufferTypes pBufferType)
+	{
+		// # Storage buffer
+		if (pBufferType == RHI::GPU_BufferTypes::GPU_BUFFER_STORAGE)
+		{
+			CreateStorage(pData, pSize);
+		}
+		// # Uniform buffer
+		else if (pBufferType == RHI::GPU_BufferTypes::GPU_BUFFER_UNIFORM)
+		{
+			CreateUniform(pData, pSize);
+		}
+	}
+
+	void VK_Buffer::CreateStorage(const void* pData, size_t pSize)
 	{
 		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
 
@@ -80,7 +94,7 @@ namespace GPU
 		VkBufferUsageFlags Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 		VkMemoryPropertyFlags MemProps =
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-		
+
 		VK_BufferAndMemory StaginBuffer = CreateBuffer(pSize, Usage, MemProps);
 
 		// # Step 2: map the memory if the stage buffer
@@ -110,6 +124,26 @@ namespace GPU
 		// # Step 7: release the resources of the staging buffer
 		vkFreeMemory(pDevice, StaginBuffer.pMemory, NULL);
 		vkDestroyBuffer(pDevice, StaginBuffer.pBuffer, NULL);
+	}
+
+	void VK_Buffer::CreateUniform(const void* pData, size_t pSize)
+	{
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		// # Step 1: create the staging buffer
+		VkBufferUsageFlags Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		VkMemoryPropertyFlags MemProps =
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+		pBufferAndMemory = CreateBuffer(pSize, Usage, MemProps);
+
+		// # Step 2: map the memory
+		void* pMem = NULL;
+		VkResult res = vkMapMemory(pDevice, pBufferAndMemory.pMemory, 0, pSize, 0, &pMem);
+		VK_CHECK("vkMapMemory", res);
+
+		memcpy(pMem, pData, pSize);
+		vkUnmapMemory(pDevice, pBufferAndMemory.pMemory);
 	}
 
 	void VK_Buffer::Destroy()

@@ -21,6 +21,7 @@ namespace GPU
 		void Destroy();
 
 		uint32_t AcquireNextImage();
+		inline uint32_t CurrentFrame() { return pFrameIndex; }
 
 		void SubmitSync(const VkCommandBuffer& CmdBuf) const;
 		void SubmitAsync(const VkCommandBuffer* CmdBuf, uint32_t Count = 1);

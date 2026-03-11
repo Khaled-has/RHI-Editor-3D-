@@ -3,6 +3,8 @@
 #include "VK_wrappar.h"
 #include "VK_Backend.h"
 
+#include <glm/glm.hpp>
+
 namespace GPU
 {
 
@@ -133,7 +135,7 @@ namespace GPU
 
 	void VK_GraphicsPipeline::UpdateDescriptorSets(const std::vector<VK_PipelineBinding>* pBindingsInfo)
 	{
-		std::vector<VkWriteDescriptorSet> WriteDescriptorSets;
+		std::vector<VkWriteDescriptorSet> WriteDescriptorSets{};
 
 		for (uint32_t i = 0; i < VK_Backend::Get()->GetSwapChain().GetImageCount(); i++)
 		{
@@ -182,24 +184,23 @@ namespace GPU
 				// # Uniform buffer
 				else if (pBindingsInfo->at(j).pBindingType == VK_BINDING_UNIFORM_INFO)
 				{
-					/*for (uint32_t u = 0; u < pBindingsInfo->at(j).pUniformbuffer->size(); u++)
-					{
-						VkDescriptorBufferInfo UniformInfo = {
+					VkDescriptorBufferInfo UniformInfo = {
+						.buffer = pBindingsInfo->at(j).pUniformBuffers->at(i).GetBuffer().pBuffer,
+						.offset = 0,
+						.range = VK_WHOLE_SIZE
+					};
 
-						};
-
-						WriteDescriptorSets.push_back(
-							VkWriteDescriptorSet{
-								.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-								.dstSet = pDescriptorSets[i],
-								.dstBinding = pBindingsInfo->at(j).pBinding,
-								.dstArrayElement = 0,
-								.descriptorCount = 1,
-								.descriptorType = pBindingsInfo->at(j).pDescType,
-								.pBufferInfo = &UniformInfo
-							}
-						);
-					}*/
+					WriteDescriptorSets.push_back(
+						VkWriteDescriptorSet{
+							.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+							.dstSet = pDescriptorSets[i],
+							.dstBinding = pBindingsInfo->at(j).pBinding,
+							.dstArrayElement = 0,
+							.descriptorCount = 1,
+							.descriptorType = pBindingsInfo->at(j).pDescType,
+							.pBufferInfo = &UniformInfo
+						}
+					);
 				}
 			}
 		}

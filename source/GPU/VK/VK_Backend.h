@@ -12,7 +12,7 @@
 
 namespace GPU {
 
-	class VK_Backend : public GPU_Backend
+	class VK_Backend : public RHI::GPU_Backend
 	{
 	public:
 		VK_Backend();
@@ -49,12 +49,17 @@ namespace GPU {
 
 		std::vector<VkCommandBuffer> pCmdBufs;
 		VkCommandBuffer pCopyCmdBuf = VK_NULL_HANDLE;	// It's hard coded, I will use another thread later on.
-
-		VK_Batch pBatch;
 	};
 
-	inline VK_Backend* CreateVulkanBackend() { return new VK_Backend; }
+}
 
+namespace RHI
+{
+	inline GPU::VK_Backend* CreateVulkanBackend()
+	{
+		GPU_Backend::GetBackendType() = GPU_BACKEND_TYPES::GPU_BACKEND_VULKAN;
+		return new GPU::VK_Backend;
+	}
 }
 
 #endif

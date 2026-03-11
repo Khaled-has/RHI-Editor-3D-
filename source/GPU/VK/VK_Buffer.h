@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "GPU/GPU_Buffer.h"
+
 namespace GPU
 {
 
@@ -15,21 +17,28 @@ namespace GPU
 		VkDeviceSize pAllocationSize = 0;
 	};
 
-	class VK_Buffer
+	class VK_Buffer : public RHI::GPU_Buffer
 	{
 	public:
 		VK_Buffer() {}
+		VK_Buffer(const void* pData, size_t pSize, RHI::GPU_BufferTypes pBufferType)
+		{
+			Create(pData, pSize, pBufferType);
+		}
 		~VK_Buffer() {}
 
-		void Create(const void* pData, size_t pSize);
+		virtual void Create(const void* pData, size_t pSize, RHI::GPU_BufferTypes pBufferType) override;
 		void Destroy();
 
-		void Update(const void* pData, size_t pSize);
+		virtual void Update(const void* pData, size_t pSize) override;
 
-		const VK_BufferAndMemory& GetBuffer() { return pBufferAndMemory; }
+		inline const VK_BufferAndMemory& GetBuffer() const { return pBufferAndMemory; }
 
 	private:
 		VK_BufferAndMemory pBufferAndMemory;
+
+		void CreateStorage(const void* pData, size_t pSize);
+		void CreateUniform(const void* pData, size_t pSize);
 	};
 
 }

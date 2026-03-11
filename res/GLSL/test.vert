@@ -12,10 +12,14 @@ struct VertexData
 };
 
 layout (binding = 0) readonly buffer vertices { VertexData data[]; } in_vertices;
+layout (binding = 1) uniform UniformBuffer 
+{ 
+	mat4 model; 
+} ubo;
 
 void main()
 {
 	VertexData vtx = in_vertices.data[gl_VertexIndex];
 	aColor = colors[gl_VertexIndex];
-	gl_Position = vec4(vtx.x, vtx.y, vtx.z, 1.0);
+	gl_Position = ubo.model * vec4(vtx.x, vtx.y, vtx.z, 1.0);
 }

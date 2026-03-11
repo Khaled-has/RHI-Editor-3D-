@@ -99,6 +99,7 @@ namespace GPU
 		// # Choose present mode
 		const std::vector<VkPresentModeKHR>& PresentModes = pDevice.GetSelectedDevice().m_presentModes;
 		VkPresentModeKHR PresentMode = ChoosePresentMode(PresentModes);
+		//PresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 
 		// # Choose swapchain surface format & color space
 		pSwChainSurfaceFormat = ChooseSurfaceFormatAndColorSpace(pDevice.GetSelectedDevice().m_surfaceFormats);

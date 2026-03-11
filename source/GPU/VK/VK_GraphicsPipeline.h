@@ -26,7 +26,7 @@ namespace GPU
 		VkDescriptorType pDescType;
 		VkShaderStageFlags pStageFlag;
 		VK_BindingInfoType pBindingType;
-		VK_Buffer* pBuffer;
+		const VK_Buffer* pBuffer;
 		//VK_Texture* pTexture = NULL;
 		std::vector<VK_Buffer>* pUniformBuffers = NULL;
 	};

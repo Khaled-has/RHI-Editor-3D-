@@ -577,6 +577,8 @@ namespace GPU
 			m_pPhyDevices[pSelectedPhyDevIndex].pIsDynamicSupported = false;
 		}
 
+		//m_pPhyDevices[pSelectedPhyDevIndex].pIsDynamicSupported = false; // # I change between dynamic and render pass for test
+
 		if (GetSelectedDevice().m_features.geometryShader == VK_FALSE)
 		{
 			VK_LOG_WARN("The Geometry shader is not supported!");
