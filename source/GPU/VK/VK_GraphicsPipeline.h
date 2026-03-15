@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "VK_Buffer.h"
+#include "VK_Texture.h"
 
 namespace GPU
 {
@@ -26,9 +27,9 @@ namespace GPU
 		VkDescriptorType pDescType;
 		VkShaderStageFlags pStageFlag;
 		VK_BindingInfoType pBindingType;
-		const VK_Buffer* pBuffer;
-		//VK_Texture* pTexture = NULL;
-		std::vector<VK_Buffer>* pUniformBuffers = NULL;
+		const VK_Buffer pBuffer;
+		const VK_Texture pTexture;
+		std::vector<VK_Buffer> pUniformBuffers;
 	};
 
 	// # The pipeline it self

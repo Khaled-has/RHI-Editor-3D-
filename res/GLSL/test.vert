@@ -9,17 +9,19 @@ vec3 colors[3] = {
 struct VertexData
 {
 	float x, y, z;
+	float r, b, g;
 };
 
 layout (binding = 0) readonly buffer vertices { VertexData data[]; } in_vertices;
 layout (binding = 1) uniform UniformBuffer 
 { 
 	mat4 model; 
+	mat4 VP;
 } ubo;
 
 void main()
 {
 	VertexData vtx = in_vertices.data[gl_VertexIndex];
-	aColor = colors[gl_VertexIndex];
-	gl_Position = ubo.model * vec4(vtx.x, vtx.y, vtx.z, 1.0);
+	aColor = vec3(vtx.r, vtx.b, vtx.g);
+	gl_Position = ubo.VP * ubo.model * vec4(vtx.x, vtx.y, vtx.z, 1.0);
 }

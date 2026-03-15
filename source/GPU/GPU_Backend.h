@@ -29,6 +29,8 @@ namespace RHI {
 		inline static GPU_BACKEND_TYPES pBackendType;
 	};
 
+	GPU_Backend* CreateVulkanBackend();
+
 }
 
 #endif

@@ -7,11 +7,14 @@
 
 namespace RHI
 {
-	GPU_Batch* CreateBatch(GPU_BatchTypes pBatchType, const GPU_Buffer* pVertexBuf, const GPU_Buffer* pUniformBuf, const GPU_Buffer* pIndexBuf)
+	GPU_Batch* CreateBatch(
+		GPU_BatchTypes pBatchType, const GPU_Buffer* pVertexBuf, const GPU_Buffer* pUniformBuf, 
+		const GPU_Texture* pTexture, const GPU_Buffer* pIndexBuf
+	)
 	{
 		if (GPU_Backend::GetBackendType() == GPU_BACKEND_TYPES::GPU_BACKEND_VULKAN)
 		{
-			return new GPU::VK_Batch(pBatchType, pVertexBuf, pUniformBuf, pIndexBuf);
+			return new GPU::VK_Batch(pBatchType, pVertexBuf, pUniformBuf, pTexture, pIndexBuf);
 		}
 		else if (GPU_Backend::GetBackendType() == GPU_BACKEND_TYPES::GPU_BACKEND_DX12)
 		{

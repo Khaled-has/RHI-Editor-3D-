@@ -230,4 +230,70 @@ namespace GPU
 		vkCmdBeginRendering(CmdBuf, &RenderingInfo);
 	}
 
+	VK_BufferAndMemory CreateBuffer(size_t pSize, VkBufferUsageFlags pUsage, VkMemoryPropertyFlags pMemProp)
+	{
+		VkBufferCreateInfo bCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+			.size = pSize,
+			.usage = pUsage,
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+		};
+
+		VK_BufferAndMemory bufferAndMem;
+
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		// # Step 1: create a buffer
+		VkResult res = vkCreateBuffer(pDevice, &bCreateInfo, NULL, &bufferAndMem.pBuffer);
+		VK_CHECK("vkCreateBuffer", res);
+
+		// # Step 2: get the buffer memory requitements
+		VkMemoryRequirements MemReqs = {};
+		vkGetBufferMemoryRequirements(pDevice, bufferAndMem.pBuffer, &MemReqs);
+
+		bufferAndMem.pAllocationSize = MemReqs.size;
+
+		// # Step 3: get the memory type index
+		uint32_t MemoryTypeIndex = GetMemoryTypeIndex(MemReqs.memoryTypeBits, pMemProp);
+
+		// # Step 4: allocate memory
+		VkMemoryAllocateInfo MemAllocInfo = {
+			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+			.allocationSize = MemReqs.size,
+			.memoryTypeIndex = MemoryTypeIndex
+		};
+
+		res = vkAllocateMemory(pDevice, &MemAllocInfo, NULL, &bufferAndMem.pMemory);
+		VK_CHECK("vkAllocateMemory", res);
+
+		// # Step 5: bind memory
+		res = vkBindBufferMemory(pDevice, bufferAndMem.pBuffer, bufferAndMem.pMemory, 0);
+		VK_CHECK("vkBindBufferMemory", res);
+
+		return bufferAndMem;
+	}
+
+	void CopyBuffer(VkBuffer pDst, VkBuffer pSrc, VkDeviceSize pSize)
+	{
+		const VkCommandBuffer& pCopyCmdBuf = VK_Backend::Get()->GetCopyCmdBuf();
+
+		BeginCommandBuffer(pCopyCmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+		VkBufferCopy BufferCopy = {
+			.srcOffset = 0,
+			.dstOffset = 0,
+			.size = pSize
+		};
+
+		vkCmdCopyBuffer(pCopyCmdBuf, pSrc, pDst, 1, &BufferCopy);
+
+		vkEndCommandBuffer(pCopyCmdBuf);
+
+		const VK_Queue& pQueue = VK_Backend::Get()->GetQueue();
+
+		pQueue.SubmitSync(pCopyCmdBuf);
+
+		pQueue.WaitIdle();
+	}
+
 }

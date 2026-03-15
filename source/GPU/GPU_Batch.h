@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "GPU_Buffer.h"
+#include "GPU_Texture.h"
 
 namespace RHI
 {
@@ -21,7 +22,8 @@ namespace RHI
 		~GPU_Batch() {}
 
 		virtual void Create(
-			GPU_BatchTypes pBatchType, const GPU_Buffer* pVertexBuf, const GPU_Buffer* pUniformBuf, const GPU_Buffer* pIndexBuf = NULL
+			GPU_BatchTypes pBatchType, const GPU_Buffer* pVertexBuf, const GPU_Buffer* pUniformBuf, 
+			const GPU_Texture* pTexture, const GPU_Buffer* pIndexBuf = NULL
 		) = 0;
 		virtual void Destroy() = 0;
 		
@@ -29,7 +31,8 @@ namespace RHI
 	};
 
 	GPU_Batch* CreateBatch(
-		GPU_BatchTypes pBatchType, const GPU_Buffer* pVertexBuf, const GPU_Buffer* pUniformBuf, const GPU_Buffer* pIndexBuf = NULL
+		GPU_BatchTypes pBatchType, const GPU_Buffer* pVertexBuf, const GPU_Buffer* pUniformBuf, 
+		const GPU_Texture* pTexture, const GPU_Buffer* pIndexBuf = NULL
 	);
 
 }

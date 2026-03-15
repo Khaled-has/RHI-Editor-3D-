@@ -145,7 +145,7 @@ namespace GPU
 				if (pBindingsInfo->at(j).pBindingType == VK_BINDING_BUFFER_INFO)
 				{
 					VkDescriptorBufferInfo BufferInfo = {
-						.buffer = pBindingsInfo->at(j).pBuffer->GetBuffer().pBuffer,
+						.buffer = pBindingsInfo->at(j).pBuffer.GetBuffer().pBuffer,
 						.offset = 0,
 						.range = VK_WHOLE_SIZE
 					};
@@ -165,8 +165,8 @@ namespace GPU
 				else if (pBindingsInfo->at(j).pBindingType == VK_BINDING_IMAGE_INFO)
 				{
 					VkDescriptorImageInfo ImageInfo = {
-						//.sampler = pBindingsInfo->at(j).pTexture,
-						//.imageView = pBindingsInfo->at(j).pTexture,
+						.sampler = pBindingsInfo->at(j).pTexture.GetSampler(),
+						.imageView = pBindingsInfo->at(j).pTexture.GetView(),
 						.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 					};
 
@@ -185,7 +185,7 @@ namespace GPU
 				else if (pBindingsInfo->at(j).pBindingType == VK_BINDING_UNIFORM_INFO)
 				{
 					VkDescriptorBufferInfo UniformInfo = {
-						.buffer = pBindingsInfo->at(j).pUniformBuffers->at(i).GetBuffer().pBuffer,
+						.buffer = pBindingsInfo->at(j).pUniformBuffers[i].GetBuffer().pBuffer,
 						.offset = 0,
 						.range = VK_WHOLE_SIZE
 					};

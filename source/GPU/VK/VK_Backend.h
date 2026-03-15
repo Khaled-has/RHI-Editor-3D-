@@ -51,15 +51,12 @@ namespace GPU {
 		VkCommandBuffer pCopyCmdBuf = VK_NULL_HANDLE;	// It's hard coded, I will use another thread later on.
 	};
 
-}
-
-namespace RHI
-{
-	inline GPU::VK_Backend* CreateVulkanBackend()
+	inline VK_Backend* CreateVulkanBackend()
 	{
-		GPU_Backend::GetBackendType() = GPU_BACKEND_TYPES::GPU_BACKEND_VULKAN;
-		return new GPU::VK_Backend;
+		RHI::GPU_Backend::GetBackendType() = RHI::GPU_BACKEND_TYPES::GPU_BACKEND_VULKAN;
+		return new VK_Backend;
 	}
+
 }
 
 #endif

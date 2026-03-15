@@ -1,36 +1,80 @@
 #include "VK_Shader.h"
 
+#include <iostream>
 #include <fstream>
+#include <vector>
 
 #include "VK_wrappar.h"
 #include "VK_Backend.h"
 
+#include "shaderc.hpp"
+
 namespace GPU
 {
 
-	std::vector<char> ReadFile(const std::string pFilename)
+	std::string ReadFile(const std::string& pPath)
 	{
-		std::ifstream pFile(pFilename, std::ios::ate | std::ios::binary);
+		std::ifstream file(pPath, std::ios::ate | std::ios::binary);
 
-		size_t pFileSize = (size_t)pFile.tellg();
-		std::vector<char> buffer(pFileSize);
+		if (!file.is_open())
+		{
+			VK_LOG_ERROR("Shader: Failed to open file");
+		}
 
-		pFile.seekg(0);
-		pFile.read(buffer.data(), pFileSize);
+		size_t pSize = file.tellg();
+		std::string buffer(pSize, '\0');
 
-		pFile.close();
+		file.seekg(0);
+		file.read(buffer.data(), pSize);
+		file.close();
+
 		return buffer;
 	}
 
-	VkShaderModule CreateShaderModuleFromBinary(std::string pFileName)
+	std::vector<uint32_t> CompileShader(
+		const std::string& source,
+		shaderc_shader_kind kind,
+		const std::string& name
+	)
 	{
-		std::string pFinalPath = std::string(RES_PATH) + "GLSL/" + "spv/" + pFileName + ".spv";
-		auto pCode = ReadFile(pFinalPath);
+		shaderc::Compiler compiler;
+		shaderc::CompileOptions options;
 
+		options.SetOptimizationLevel(shaderc_optimization_level_performance);
+
+		auto result = compiler.CompileGlslToSpv(
+			source,
+			kind,
+			name.c_str(),
+			options
+		);
+
+		if (result.GetCompilationStatus() != shaderc_compilation_status_success)
+		{
+			VK_LOG_ERROR("Shader Error: {0}", result.GetErrorMessage());
+		}
+		
+		return { result.cbegin(), result.cend() };
+	}
+
+	VkShaderModule CreateShaderModuleFromBinary(std::string pFileName, shaderc_shader_kind pKind)
+	{
+		// # Step 1: Read spv
+		std::string pFinalPath = std::string(RES_PATH) + "GLSL/" + pFileName;
+		std::string pSource = ReadFile(pFinalPath);
+
+		// # Step 2: Compile spv
+		std::vector<uint32_t> spv = CompileShader(
+			pSource,
+			pKind,
+			pFileName
+		);
+		
+		// # Step 3: Create the shader
 		VkShaderModuleCreateInfo CreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-			.codeSize = pCode.size(),
-			.pCode = reinterpret_cast<const uint32_t*>(pCode.data())
+			.codeSize = size_t(spv.size() * sizeof(uint32_t)),
+			.pCode = spv.data()
 		};
 
 		VkShaderModule pShaderModule = VK_NULL_HANDLE;
@@ -59,12 +103,12 @@ namespace GPU
 
 	void VK_Shader::CreateVertexShader(const char* pVertex)
 	{
-		pVS = CreateShaderModuleFromBinary(pVertex);
+		pVS = CreateShaderModuleFromBinary(pVertex, shaderc_vertex_shader);
 	}
 
 	void VK_Shader::CreateFragmentShader(const char* pFragment)
 	{
-		pFS = CreateShaderModuleFromBinary(pFragment);
+		pFS = CreateShaderModuleFromBinary(pFragment, shaderc_fragment_shader);
 	}
 
 }

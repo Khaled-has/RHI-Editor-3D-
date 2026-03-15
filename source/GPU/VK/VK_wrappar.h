@@ -21,5 +21,9 @@ namespace GPU
 	void ImageMemBarrier(const VkCommandBuffer& CmdBuf, VkImage Image, VkFormat Format, VkImageLayout OldLayout, VkImageLayout NewLayout, int LayerCount);
 
 	void BeginDynamicRendering(const VkCommandBuffer& CmdBuf, uint32_t ImageIndex, VkClearValue* pClearColor, VkClearValue* pDepthValue);
+
+	VK_BufferAndMemory CreateBuffer(size_t pSize, VkBufferUsageFlags pUsage, VkMemoryPropertyFlags pMemProp);
+
+	void CopyBuffer(VkBuffer pDst, VkBuffer pSrc, VkDeviceSize pSize);
 }
 #endif

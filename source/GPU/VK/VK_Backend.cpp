@@ -54,7 +54,11 @@ namespace GPU {
 
 	void VK_Backend::RenderEnd()
 	{
+		uint32_t ImageIndex = pQueue.AcquireNextImage();
 
+		pQueue.SubmitAsync(&pCmdBufs[ImageIndex]);
+
+		pQueue.Present(ImageIndex);
 	}
 
 }

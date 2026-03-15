@@ -24,20 +24,23 @@ target_sources(${PROJECT_NAME} PRIVATE
  "source/GPU/VK/VK_Backend.cpp" "source/Log/Log.cpp" "source/GPU/VK/VK_Device.cpp" "source/Window/windows/WindowsWindow.cpp" "source/GPU/VK/VK_SwapChain.cpp" "source/GPU/VK/VK_CommandBufferPool.h" "source/GPU/VK/VK_CommandBufferPool.cpp" "source/GPU/VK/VK_Thread.cpp" 
  "source/GPU/VK/VK_Queue.cpp"
  "source/GPU/VK/VK_Batch.cpp" "source/GPU/VK/VK_GraphicsPipeline.cpp" "source/GPU/VK/VK_Buffer.cpp" "source/GPU/VK/VK_wrappar.cpp" "source/GPU/VK/VK_Shader.cpp"
- ${SHADERC_CPP} "source/GPU/GPU_Buffer.cpp" "source/GPU/GPU_Batch.cpp")
+ "extern/stb/stb_image.cpp" "source/GPU/GPU_Buffer.cpp" "source/GPU/GPU_Batch.cpp" "source/GPU/VK/VK_Texture.cpp" "source/GPU/GPU_Texture.h" "source/GPU/GPU_Texture.cpp" "source/GPU/VK/VK_Draw.h" "source/GPU/GPU_Draw.h" "source/GPU/VK/VK_Draw.cpp" "source/GPU/GPU_Draw.cpp" "source/Renderer/TestRenderer.h" "source/GPU/GPU.h" "source/Renderer/TestRenderer.cpp" "source/GPU/GPU_Backend.cpp")
 
 # Target include directories
 target_include_directories(${PROJECT_NAME} PRIVATE
 						"${CMAKE_SOURCE_DIR}/source"				    # source
 						"${VULKAN_PATH}/include"					    # VK
+						"${CMAKE_SOURCE_DIR}/extern/shaderc"			# shaderc
 						"${CMAKE_SOURCE_DIR}/extern/spdlog/include"     # Spdlog
 						"${CMAKE_SOURCE_DIR}/extern/glm"				# glm
+						"${CMAKE_SOURCE_DIR}/extern/stb"				# stb
 )
 
 # Target link libararise
 target_link_libraries(${PROJECT_NAME} PRIVATE
 						"${VULKAN_PATH}/Lib/vulkan-1.lib"
 						SDL3::SDL3
+						"${CMAKE_SOURCE_DIR}/extern/shaderc/shaderc_shared.lib"
 )
 
 # If Windows we will use SDL3

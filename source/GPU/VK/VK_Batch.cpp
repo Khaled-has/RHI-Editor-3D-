@@ -20,7 +20,8 @@ namespace GPU
 	Uni matrix;
 
 	void VK_Batch::Create(
-		RHI::GPU_BatchTypes pBatchType, const RHI::GPU_Buffer* pVertexBuf, const RHI::GPU_Buffer* pUniformBuf, const RHI::GPU_Buffer* pIndexBuf
+		RHI::GPU_BatchTypes pBatchType, const RHI::GPU_Buffer* pVertexBuf, const RHI::GPU_Buffer* pUniformBuf,
+		const RHI::GPU_Texture* pTexture, const RHI::GPU_Buffer* pIndexBuf
 	)
 	{
 		// # Triangles batch
@@ -28,6 +29,7 @@ namespace GPU
 		{
 			CreateTrianglesPipeline(
 				(VK_Buffer*)pVertexBuf, (VK_Buffer*)pUniformBuf, 
+				(VK_Texture*)pTexture,
 				pIndexBuf == NULL ? NULL : (VK_Buffer*)pIndexBuf
 			);
 		}
@@ -80,7 +82,8 @@ namespace GPU
 		vkCmdDraw(CmdBuf, 3, 1, 0, 0);
 	}
 
-	void VK_Batch::CreateTrianglesPipeline(const VK_Buffer* pVertexBuf, const VK_Buffer* pUniformBuf, const RHI::GPU_Buffer* pIndexBuf)
+	void VK_Batch::CreateTrianglesPipeline(const VK_Buffer* pVertexBuf, const VK_Buffer* pUniformBuf, 
+		const VK_Texture* pTexture, const RHI::GPU_Buffer* pIndexBuf)
 	{
 		pShader.Create("test.vert", "test.frag");
 	
@@ -92,7 +95,7 @@ namespace GPU
 				.pDescType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 				.pStageFlag = VK_SHADER_STAGE_VERTEX_BIT,
 				.pBindingType = VK_BINDING_BUFFER_INFO,
-				.pBuffer = pVertexBuf
+				.pBuffer = *pVertexBuf
 			});
 		infos.push_back(
 			VK_PipelineBinding{
@@ -100,7 +103,16 @@ namespace GPU
 				.pDescType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 				.pStageFlag = VK_SHADER_STAGE_VERTEX_BIT,
 				.pBindingType = VK_BINDING_UNIFORM_INFO,
-				.pUniformBuffers = &uniforms
+				.pUniformBuffers = uniforms
+			}
+		);
+		infos.push_back(
+			VK_PipelineBinding{
+				.pBinding = 2,
+				.pDescType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				.pStageFlag = VK_SHADER_STAGE_FRAGMENT_BIT,
+				.pBindingType = VK_BINDING_IMAGE_INFO,
+				.pTexture = *pTexture
 			}
 		);
 
