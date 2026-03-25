@@ -6,5 +6,6 @@
 #include "GPU_Draw.h"
 #include "GPU_Buffer.h"
 #include "GPU_Texture.h"
+#include "GPU_RenderPass.h"
 
 #endif

@@ -24,7 +24,8 @@ target_sources(${PROJECT_NAME} PRIVATE
  "source/GPU/VK/VK_Backend.cpp" "source/Log/Log.cpp" "source/GPU/VK/VK_Device.cpp" "source/Window/windows/WindowsWindow.cpp" "source/GPU/VK/VK_SwapChain.cpp" "source/GPU/VK/VK_CommandBufferPool.h" "source/GPU/VK/VK_CommandBufferPool.cpp" "source/GPU/VK/VK_Thread.cpp" 
  "source/GPU/VK/VK_Queue.cpp"
  "source/GPU/VK/VK_Batch.cpp" "source/GPU/VK/VK_GraphicsPipeline.cpp" "source/GPU/VK/VK_Buffer.cpp" "source/GPU/VK/VK_wrappar.cpp" "source/GPU/VK/VK_Shader.cpp"
- "extern/stb/stb_image.cpp" "source/GPU/GPU_Buffer.cpp" "source/GPU/GPU_Batch.cpp" "source/GPU/VK/VK_Texture.cpp" "source/GPU/GPU_Texture.h" "source/GPU/GPU_Texture.cpp" "source/GPU/VK/VK_Draw.h" "source/GPU/GPU_Draw.h" "source/GPU/VK/VK_Draw.cpp" "source/GPU/GPU_Draw.cpp" "source/Renderer/TestRenderer.h" "source/GPU/GPU.h" "source/Renderer/TestRenderer.cpp" "source/GPU/GPU_Backend.cpp")
+ "extern/stb/stb_image.cpp" "source/GPU/GPU_Buffer.cpp" "source/GPU/GPU_Batch.cpp" "source/GPU/VK/VK_Texture.cpp" "source/GPU/GPU_Texture.h" "source/GPU/GPU_Texture.cpp" "source/GPU/VK/VK_Draw.h" "source/GPU/GPU_Draw.h" "source/GPU/VK/VK_Draw.cpp" "source/GPU/GPU_Draw.cpp" "source/Renderer/TestRenderer.h" "source/GPU/GPU.h" "source/Renderer/TestRenderer.cpp" "source/GPU/GPU_Backend.cpp"
+ "source/Renderer/Camera.cpp"  "source/GPU/shaderCompiler/SC_Compiler.h" "source/GPU/shaderCompiler/SC_Compiler.cpp" "source/GPU/VK/VK_RenderPass.h" "source/GPU/GPU_RenderPass.h" "source/GPU/VK/VK_RenderPass.cpp" "source/GPU/GPU_RenderPass.cpp")
 
 # Target include directories
 target_include_directories(${PROJECT_NAME} PRIVATE

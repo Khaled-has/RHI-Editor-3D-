@@ -9,6 +9,7 @@
 #include "VK_Queue.h"
 #include "VK_Thread.h"
 #include "VK_Batch.h"
+#include "VK_RenderPass.h"
 
 namespace GPU {
 
@@ -23,8 +24,10 @@ namespace GPU {
 		virtual void Backend_Init() override;
 		virtual void Backend_Exit() override;
 
-		virtual void RenderBegin() override;
-		virtual void RenderEnd() override;
+		virtual void BeginRecord() override;
+		virtual void EndRecord(RHI::GPU_RenderPass* pFinalRenderPass) override;
+
+		virtual void Rendering() override;
 
 		/*	# The instance of Vulkan backend  */
 		static VK_Backend* Get() { return pVkInstance; }
@@ -38,6 +41,8 @@ namespace GPU {
 
 		inline const VkCommandBuffer& GetCmdBuf(uint32_t Index) { return pCmdBufs[Index]; }
 		inline const VkCommandBuffer& GetCopyCmdBuf() const { return pCopyCmdBuf; }
+
+		std::vector<std::function<void(VkCommandBuffer, uint32_t)>>* GetDrawCmdsArray();
 	private:
 		static VK_Backend* pVkInstance;
 
@@ -49,6 +54,14 @@ namespace GPU {
 
 		std::vector<VkCommandBuffer> pCmdBufs;
 		VkCommandBuffer pCopyCmdBuf = VK_NULL_HANDLE;	// It's hard coded, I will use another thread later on.
+
+		std::vector<std::function<void(VkCommandBuffer, uint32_t)>> pDrawCmdFuncs;
+
+		// Screen image
+		VK_Buffer pScreenImageBuffer;
+		VK_GraphicsPipeline pScreenImagePipeline;
+
+		void CreateScreenImageResources(VK_RenderPass* pFinalFrame);
 	};
 
 	inline VK_Backend* CreateVulkanBackend()

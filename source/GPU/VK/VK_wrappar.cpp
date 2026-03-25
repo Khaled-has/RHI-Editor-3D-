@@ -2,6 +2,8 @@
 
 #include "VK_Backend.h"
 
+#include "Window/Window.h"
+
 namespace GPU
 {
 	uint32_t GetMemoryTypeIndex(uint32_t MemTypeBitsMask, VkMemoryPropertyFlags ReqMemPropFlags)
@@ -181,7 +183,7 @@ namespace GPU
 			0, 0, NULL, 0, NULL, 1, &Barrier);
 	}
 
-	void BeginDynamicRendering(const VkCommandBuffer& CmdBuf, uint32_t ImageIndex, VkClearValue* pClearColor, VkClearValue* pDepthValue)
+	void BeginDynamicRendering(const VkCommandBuffer& CmdBuf, uint32_t ImageIndex, VkClearValue* pClearColor, VkClearValue* pDepthValue, bool IsDepthTest)
 	{
 		VkRenderingAttachmentInfoKHR ColorAttachment = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
@@ -200,10 +202,10 @@ namespace GPU
 			ColorAttachment.clearValue = *pClearColor;
 		}
 
-		/*VkRenderingAttachmentInfo DepthAttachment = {
+		VkRenderingAttachmentInfo DepthAttachment = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 			.pNext = NULL,
-			.imageView = VK_Backend::Get()->GetSwapChain().GetImageView(ImageIndex),
+			.imageView = IsDepthTest ? VK_Backend::Get()->GetSwapChain().GetDepthImageView(ImageIndex) : NULL,
 			.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			.resolveMode = VK_RESOLVE_MODE_NONE,
 			.resolveImageView = VK_NULL_HANDLE,
@@ -215,16 +217,65 @@ namespace GPU
 		if (pDepthValue)
 		{
 			DepthAttachment.clearValue = *pDepthValue;
-		}*/
+		}
 
 		VkRenderingInfoKHR RenderingInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-			.renderArea = {{0, 0}, {1440, 720}},
+			.renderArea = {{0, 0}, { Win::Window::GetInstance()->GetWindowSize().first, Win::Window::GetInstance()->GetWindowSize().second }},
 			.layerCount = 1,
 			.viewMask = 0,
 			.colorAttachmentCount = 1,
 			.pColorAttachments = &ColorAttachment,
-			.pDepthAttachment = NULL
+			.pDepthAttachment = IsDepthTest ? &DepthAttachment : NULL
+		};
+
+		vkCmdBeginRendering(CmdBuf, &RenderingInfo);
+	}
+
+	void BeginDynamicRendering(const VkCommandBuffer& CmdBuf, const VkImageView& pView, uint32_t ImageIndex, VkClearValue* pClearColor, VkClearValue* pDepthValue, bool IsDepthTest)
+	{
+		VkRenderingAttachmentInfoKHR ColorAttachment = {
+			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+			.pNext = NULL,
+			.imageView = pView,
+			.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			.resolveMode = VK_RESOLVE_MODE_NONE,
+			.resolveImageView = VK_NULL_HANDLE,
+			.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.loadOp = pClearColor ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE
+		};
+
+		if (pClearColor)
+		{
+			ColorAttachment.clearValue = *pClearColor;
+		}
+
+		VkRenderingAttachmentInfo DepthAttachment = {
+			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+			.pNext = NULL,
+			.imageView = IsDepthTest ? VK_Backend::Get()->GetSwapChain().GetDepthImageView(ImageIndex) : NULL,
+			.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			.resolveMode = VK_RESOLVE_MODE_NONE,
+			.resolveImageView = VK_NULL_HANDLE,
+			.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.loadOp = pDepthValue ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE
+		};
+
+		if (pDepthValue)
+		{
+			DepthAttachment.clearValue = *pDepthValue;
+		}
+
+		VkRenderingInfoKHR RenderingInfo = {
+			.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+			.renderArea = {{0, 0}, { Win::Window::GetInstance()->GetWindowSize().first, Win::Window::GetInstance()->GetWindowSize().second }},
+			.layerCount = 1,
+			.viewMask = 0,
+			.colorAttachmentCount = 1,
+			.pColorAttachments = &ColorAttachment,
+			.pDepthAttachment = IsDepthTest ? &DepthAttachment : NULL
 		};
 
 		vkCmdBeginRendering(CmdBuf, &RenderingInfo);
@@ -296,4 +347,173 @@ namespace GPU
 		pQueue.WaitIdle();
 	}
 
+	VkImageView CreateImageView(const VkImage& Image, VkDevice Device, VkFormat Format, VkImageAspectFlags AspectFlags)
+	{
+		VkImageViewCreateInfo ViewInfo =
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.pNext = NULL,
+			.flags = 0,
+			.image = Image,
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,
+			.format = Format,
+			.components = {
+				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+			},
+			.subresourceRange = {
+				.aspectMask = AspectFlags,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+
+		VkImageView ImageView;
+		VkResult res = vkCreateImageView(Device, &ViewInfo, NULL, &ImageView);
+		VK_CHECK("vkCreateImageView", res);
+
+		return ImageView;
+	}
+
+	VkSampler CreateTextureSampler(VkFilter MinFilter, VkFilter MaxFilter,
+		VkSamplerAddressMode AddressMode)
+	{
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		VkSamplerCreateInfo SamplerInfo = {
+			.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.magFilter = MinFilter,
+			.minFilter = MaxFilter,
+			.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+			.addressModeU = AddressMode,
+			.addressModeV = AddressMode,
+			.addressModeW = AddressMode,
+			.mipLodBias = 0.0f,
+			.anisotropyEnable = VK_FALSE,
+			.maxAnisotropy = 1,
+			.compareEnable = VK_FALSE,
+			.compareOp = VK_COMPARE_OP_ALWAYS,
+			.minLod = 0.0f,
+			.maxLod = 0.0f,
+			.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+			.unnormalizedCoordinates = VK_FALSE
+		};
+
+		VkSampler Sampler;
+		VkResult res = vkCreateSampler(pDevice, &SamplerInfo, VK_NULL_HANDLE, &Sampler);
+		VK_CHECK("vkCreateSampler", res);
+		return Sampler;
+	}
+
+	VkImageView CreateImageView(VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags, bool IsCubemap)
+	{
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		VkImageViewCreateInfo ViewInfo =
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.pNext = NULL,
+			.flags = 0,
+			.image = Image,
+			.viewType = IsCubemap ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D,
+			.format = Format,
+			.components = {
+				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+			},
+			.subresourceRange = {
+				.aspectMask = AspectFlags,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = IsCubemap ? 6u : 1u
+			}
+		};
+
+		VkImageView ImageView;
+		VkResult res = vkCreateImageView(pDevice, &ViewInfo, NULL, &ImageView);
+		if (res != VK_SUCCESS)
+		{
+			printf("Cannot create image view\n");
+		}
+
+		return ImageView;
+	}
+
+	void CopyBufferToImage(VkImage Dst, VkBuffer Src, uint32_t ImageWidth, uint32_t ImageHeight, VkDeviceSize LayerSize, int LayerCount)
+	{
+		const VkCommandBuffer& CmdBuf = VK_Backend::Get()->GetCopyCmdBuf();
+
+		BeginCommandBuffer(CmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+		std::vector<VkBufferImageCopy> BufferImageCopy(LayerCount);
+
+		for (int i = 0; i < LayerCount; i++)
+		{
+			VkBufferImageCopy bic = {
+				.bufferOffset = i * LayerSize,
+				.bufferRowLength = 0,
+				.bufferImageHeight = 0,
+				.imageSubresource = VkImageSubresourceLayers{
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.mipLevel = 0,
+					.baseArrayLayer = (uint32_t)i,
+					.layerCount = (uint32_t)LayerCount
+				},
+				.imageOffset = VkOffset3D{.x = 0, .y = 0, .z = 0},
+				.imageExtent = VkExtent3D{.width = ImageWidth, .height = ImageHeight, .depth = 1}
+			};
+
+			BufferImageCopy[i] = bic;
+		}
+
+		vkCmdCopyBufferToImage(
+			CmdBuf, Src, Dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			(uint32_t)BufferImageCopy.size(), BufferImageCopy.data());
+
+		vkEndCommandBuffer(CmdBuf);
+
+		VK_Backend::Get()->GetQueue().SubmitSync(CmdBuf);
+
+		VK_Backend::Get()->GetQueue().WaitIdle();
+	}
+
+	int GetBytesPerTexFormat(VkFormat Format)
+	{
+		switch (Format)
+		{
+		case VK_FORMAT_R8_SINT:
+		case VK_FORMAT_R8_UNORM:
+			return 1;
+		case VK_FORMAT_R16_SFLOAT:
+			return 2;
+		case VK_FORMAT_R16G16_SFLOAT:
+		case VK_FORMAT_R16G16_SNORM:
+		case VK_FORMAT_B8G8R8A8_UNORM:
+		case VK_FORMAT_R8G8B8A8_UNORM:
+		case VK_FORMAT_R8G8B8A8_SNORM:
+		case VK_FORMAT_R8G8B8A8_SRGB:
+			return 4;
+		case VK_FORMAT_R16G16B16A16_SFLOAT:
+			return 4 * sizeof(uint16_t);
+		case VK_FORMAT_R32G32B32_SFLOAT:
+			return 3 * sizeof(float);
+		case VK_FORMAT_R8G8B8_SRGB:
+			return 3;
+		case VK_FORMAT_R32G32B32A32_SFLOAT:
+			return 4 * sizeof(float);
+		default:
+			VK_LOG_ERROR("Unknown format: {0}", (uint32_t)Format);
+			exit(1);
+		}
+		return 0;
+	}
 }

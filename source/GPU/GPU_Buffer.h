@@ -6,6 +6,7 @@ namespace RHI
 	enum class GPU_BufferTypes
 	{
 		GPU_BUFFER_STORAGE,
+		GPU_BUFFER_INDEX,
 		GPU_BUFFER_UNIFORM
 	};
 
@@ -19,9 +20,6 @@ namespace RHI
 		virtual void Destroy() = 0;
 
 		virtual void Update(const void* pData, size_t pSize) = 0;
-
-	private:
-
 	};
 
 	GPU_Buffer* CreateBuffer(const void* pData, size_t pSize, GPU_BufferTypes pBufType);

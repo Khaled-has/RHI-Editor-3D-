@@ -8,6 +8,7 @@
 
 #include "VK_Buffer.h"
 #include "VK_Texture.h"
+#include "VK_RenderPass.h"
 
 namespace GPU
 {
@@ -17,7 +18,8 @@ namespace GPU
 		VK_BINDING_UNDEFINE     = 0,
 		VK_BINDING_BUFFER_INFO  = 1,
 		VK_BINDING_IMAGE_INFO   = 2,
-		VK_BINDING_UNIFORM_INFO = 3
+		VK_BINDING_FRAME_IMAGE_INFO = 3,
+		VK_BINDING_UNIFORM_INFO = 4
 	};
 
 	// # The of bindings for descriptor sets
@@ -29,6 +31,7 @@ namespace GPU
 		VK_BindingInfoType pBindingType;
 		const VK_Buffer pBuffer;
 		const VK_Texture pTexture;
+		const VK_FrameImage pFrameImage;
 		std::vector<VK_Buffer> pUniformBuffers;
 	};
 

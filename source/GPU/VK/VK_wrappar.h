@@ -20,10 +20,23 @@ namespace GPU
 
 	void ImageMemBarrier(const VkCommandBuffer& CmdBuf, VkImage Image, VkFormat Format, VkImageLayout OldLayout, VkImageLayout NewLayout, int LayerCount);
 
-	void BeginDynamicRendering(const VkCommandBuffer& CmdBuf, uint32_t ImageIndex, VkClearValue* pClearColor, VkClearValue* pDepthValue);
+	void BeginDynamicRendering(const VkCommandBuffer& CmdBuf, uint32_t ImageIndex, VkClearValue* pClearColor, VkClearValue* pDepthValue, bool IsDepthTest);
+
+	void BeginDynamicRendering(const VkCommandBuffer& CmdBuf, const VkImageView& pView, uint32_t ImageIndex, VkClearValue* pClearColor, VkClearValue* pDepthValue, bool IsDepthTest);
 
 	VK_BufferAndMemory CreateBuffer(size_t pSize, VkBufferUsageFlags pUsage, VkMemoryPropertyFlags pMemProp);
 
 	void CopyBuffer(VkBuffer pDst, VkBuffer pSrc, VkDeviceSize pSize);
+
+	VkImageView CreateImageView(const VkImage& Image, VkDevice Device, VkFormat Format, VkImageAspectFlags AspectFlags);
+
+	VkSampler CreateTextureSampler(VkFilter MinFilter, VkFilter MaxFilter,
+		VkSamplerAddressMode AddressMode);
+
+	VkImageView CreateImageView(VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags, bool IsCubemap);
+
+	void CopyBufferToImage(VkImage Dst, VkBuffer Src, uint32_t ImageWidth, uint32_t ImageHeight, VkDeviceSize LayerSize, int LayerCount);
+
+	int GetBytesPerTexFormat(VkFormat Format);
 }
 #endif

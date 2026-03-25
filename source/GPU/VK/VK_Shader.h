@@ -17,6 +17,7 @@ namespace GPU
 		~VK_Shader() {}
 
 		void Create(const char* pVertex, const char* pFragment);
+		void Read(const char* pVertexShader, const char* pFragmentShader);
 		void Destroy();
 
 		inline const VkShaderModule& GetVertexShader() const { return pVS; }

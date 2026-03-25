@@ -35,7 +35,7 @@ namespace GPU
 		}
 
 		// # Record command buffers
-		RecordCommandBuffer(BIND_COMMAND_DRAW_FN(&GPU::VK_Batch::DrawCommand));
+		//RecordCommandBuffer(BIND_COMMAND_DRAW_FN(&GPU::VK_Batch::DrawCommand));
 	}
 
 	void VK_Batch::Destroy()

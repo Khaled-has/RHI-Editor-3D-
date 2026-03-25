@@ -8,6 +8,55 @@
 namespace GPU
 {
 
+    void CreateImage(VK_Image& pImage, uint32_t ImageWidth, uint32_t ImageHeight, VkFormat pFormat, VkImageUsageFlags UsageFlags, VkMemoryPropertyFlagBits PropertyFlags)
+	{
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		VkImageCreateInfo ImageInfo = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+			.pNext = NULL,
+			.flags = (VkImageCreateFlags)0,
+			.imageType = VK_IMAGE_TYPE_2D,
+			.format = pFormat,
+			.extent = VkExtent3D{.width = ImageWidth, .height = ImageHeight, .depth = 1},
+			.mipLevels = 1,
+			.arrayLayers = 1,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.tiling = VK_IMAGE_TILING_OPTIMAL,
+			.usage = UsageFlags,
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.queueFamilyIndexCount = 0,
+			.pQueueFamilyIndices = NULL,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+		};
+
+		// # Step 1: create the image object
+		VkResult res = vkCreateImage(pDevice, &ImageInfo, NULL, &pImage.pImage);
+		VK_CHECK("vkCreateImage", res);
+
+		// # Step 2: get the buffer memory requirements
+		VkMemoryRequirements MemReqs = { 0 };
+		vkGetImageMemoryRequirements(pDevice, pImage.pImage, &MemReqs);
+
+		// # Step 3: get the memory type index
+		uint32_t MemoryTypeIndex = GetMemoryTypeIndex(MemReqs.memoryTypeBits, PropertyFlags);
+
+		// # Step 4: allocate memory
+		VkMemoryAllocateInfo MemAllocInfo = {
+			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+			.pNext = NULL,
+			.allocationSize = MemReqs.size,
+			.memoryTypeIndex = MemoryTypeIndex
+		};
+
+		res = vkAllocateMemory(pDevice, &MemAllocInfo, NULL, &pImage.pMem);
+		VK_CHECK("vkAllocateMemory", res);
+
+		// # Step 5: bind memory
+		res = vkBindImageMemory(pDevice, pImage.pImage, pImage.pMem, 0);
+		VK_CHECK("vkBindImageMemory", res);
+	}
+
 	uint32_t ChooseNumImages(const VkSurfaceCapabilitiesKHR& Capabilities)
 	{
 		uint32_t RequestedNumImage = Capabilities.minImageCount + 1;
@@ -56,39 +105,69 @@ namespace GPU
 		return SurfaceFormats[0];
 	}
 
-	VkImageView CreateImageView(const VkImage& Image, VkDevice Device, VkFormat Format, VkImageAspectFlags AspectFlags)
+	void VK_SwapChain::Create(bool pEnableDepthTest)
 	{
-		VkImageViewCreateInfo ViewInfo =
+		pDepthTest = pEnableDepthTest;
+
+		CreateSwapchain();
+
+		// # Create depth resources
+		if (pDepthTest)
 		{
-			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-			.pNext = NULL,
-			.flags = 0,
-			.image = Image,
-			.viewType = VK_IMAGE_VIEW_TYPE_2D,
-			.format = Format,
-			.components = {
-				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-				.a = VK_COMPONENT_SWIZZLE_IDENTITY,
-			},
-			.subresourceRange = {
-				.aspectMask = AspectFlags,
-				.baseMipLevel = 0,
-				.levelCount = 1,
-				.baseArrayLayer = 0,
-				.layerCount = 1
-			}
-		};
+			CreateDepthResources();
+		}
 
-		VkImageView ImageView;
-		VkResult res = vkCreateImageView(Device, &ViewInfo, NULL, &ImageView);
-		VK_CHECK("vkCreateImageView", res);
+		/* 
+			# If the selected device does't support dynamic rendering
+			  then we want to create a RenderPass & Framebuffers
+		*/
+		if (!VK_Backend::Get()->GetDevice().GetSelectedDevice().pIsDynamicSupported)
+		{
+			CreateRenderPass();
+			CreateFramebuffers();
 
-		return ImageView;
+			VK_LOG_INFO("Using RenderPass");
+		}
+		else
+		{
+			VK_LOG_INFO("Using Dynamic rendering");
+		}
 	}
 
-	void VK_SwapChain::Create()
+	void VK_SwapChain::Destroy()
+	{
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+
+		// # Destroy RenderPass & Framebuffers
+		if (!VK_Backend::Get()->GetDevice().GetSelectedDevice().pIsDynamicSupported)
+		{
+			for (uint32_t i = 0; i < pFramebuffers.size(); i++)
+			{
+				vkDestroyFramebuffer(pDevice, pFramebuffers[i], NULL);
+			}
+
+			vkDestroyRenderPass(pDevice, pRenderPass, NULL);
+		}
+
+		// # Destroy swapchain's image views
+		for (VkImageView& Im : pImageViews)
+		{
+			vkDestroyImageView(pDevice, Im, NULL);
+		}
+
+		// # Destroy depth resources
+		for (uint32_t i = 0; i < pDepthImages.size(); i++)
+		{
+			vkDestroyImageView(pDevice, pDepthImages[i].pView, NULL);
+			vkFreeMemory(pDevice, pDepthImages[i].pMem, NULL);
+			vkDestroyImage(pDevice, pDepthImages[i].pImage, NULL);
+		}
+
+		// # Destroy swapchain
+		vkDestroySwapchainKHR(pDevice, pSwapChain, NULL);
+	}
+
+	void VK_SwapChain::CreateSwapchain()
 	{
 		const VK_Device& pDevice = VK_Backend::Get()->GetDevice();
 
@@ -127,7 +206,7 @@ namespace GPU
 
 		VkResult res = vkCreateSwapchainKHR(pDevice.GetDevice(), &SwapChainCreateInfo, NULL, &pSwapChain);
 		VK_CHECK("vkCreateSwapchainKHR", res);
-		
+
 		// # Get the swapchain's images
 		uint32_t NumSwapChainImages = 0;
 		res = vkGetSwapchainImagesKHR(pDevice.GetDevice(), pSwapChain, &NumSwapChainImages, NULL);
@@ -147,48 +226,6 @@ namespace GPU
 				pImages[i], pDevice.GetDevice(), pSwChainSurfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT
 			);
 		}
-
-		/* 
-			# If the selected device does't support dynamic rendering
-			  then we want to create a RenderPass & Framebuffers
-		*/
-		if (!VK_Backend::Get()->GetDevice().GetSelectedDevice().pIsDynamicSupported)
-		{
-			CreateRenderPass();
-			CreateFramebuffers();
-
-			VK_LOG_INFO("Using RenderPass");
-		}
-		else
-		{
-			VK_LOG_INFO("Using Dynamic rendering");
-		}
-
-	}
-
-	void VK_SwapChain::Destroy()
-	{
-		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
-
-		// # Destroy RenderPass & Framebuffers
-		if (!VK_Backend::Get()->GetDevice().GetSelectedDevice().pIsDynamicSupported)
-		{
-			for (uint32_t i = 0; i < pFramebuffers.size(); i++)
-			{
-				vkDestroyFramebuffer(pDevice, pFramebuffers[i], NULL);
-			}
-
-			vkDestroyRenderPass(pDevice, pRenderPass, NULL);
-		}
-
-		// # Destroy swapchain's image views
-		for (VkImageView& Im : pImageViews)
-		{
-			vkDestroyImageView(pDevice, Im, NULL);
-		}
-
-		// # Destroy swapchain
-		vkDestroySwapchainKHR(pDevice, pSwapChain, NULL);
 	}
 
 	void VK_SwapChain::CreateRenderPass()
@@ -239,7 +276,7 @@ namespace GPU
 			.colorAttachmentCount = 1,
 			.pColorAttachments = &ColorAttachRef,
 			.pResolveAttachments = NULL,
-			.pDepthStencilAttachment = NULL,//m_depthEnabled ? &DepthAttachmentRef : NULL,
+			.pDepthStencilAttachment = pDepthTest ? &DepthAttachmentRef : NULL,
 			.preserveAttachmentCount = 0,
 			.pPreserveAttachments = NULL
 		};
@@ -247,10 +284,10 @@ namespace GPU
 		std::vector<VkAttachmentDescription> Attachments;
 		Attachments.push_back(ColorAttachDesc);
 
-		//if (m_depthEnabled)
-		//{
-		//	Attachments.push_back(DepthAttachDesc);
-		//}
+		if (pDepthTest)
+		{
+			Attachments.push_back(DepthAttachDesc);
+		}
 
 		VkRenderPassCreateInfo RenderCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
@@ -279,6 +316,12 @@ namespace GPU
 			std::vector<VkImageView> Attachments;
 			Attachments.push_back(GetImageView(i));
 
+			// # Depth images
+			if (pDepthTest)
+			{
+				Attachments.push_back(pDepthImages[i].pView);
+			}
+
 			VkFramebufferCreateInfo CreateInfo = {
 				.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 				.renderPass = pRenderPass,
@@ -294,6 +337,39 @@ namespace GPU
 				NULL, &pFramebuffers[i]
 			);
 			VK_CHECK("vkCreateFramebuffer", res);
+		}
+	}
+
+	void VK_SwapChain::CreateDepthResources()
+	{
+		const VkDevice& pDevice = VK_Backend::Get()->GetDevice().GetDevice();
+		uint32_t NumImages = GetImageCount();
+
+		pDepthImages.resize(NumImages);
+
+		int pWinWidth, pWinHeight;
+		pWinWidth = Win::Window::GetInstance()->GetWindowSize().first;
+		pWinHeight = Win::Window::GetInstance()->GetWindowSize().second;
+
+		VkFormat DepthFormat = VK_Backend::Get()->GetDevice().GetSelectedDevice().m_depthFormat;
+
+		for (uint32_t i = 0; i < NumImages; i++)
+		{
+			VkImageUsageFlagBits Usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+			VkMemoryPropertyFlagBits PropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+			CreateImage(
+				pDepthImages[i], pWinWidth, pWinHeight, DepthFormat,
+				Usage, PropertyFlags
+			);
+
+			VkImageLayout OldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			VkImageLayout NewLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+			pDepthImages[i].pView = CreateImageView(
+				pDepthImages[i].pImage, pDevice, DepthFormat,
+				VK_IMAGE_ASPECT_DEPTH_BIT
+			);
 		}
 	}
 

@@ -34,7 +34,7 @@ namespace GPU
 		uint32_t pFirstVertex = 0;
 		uint32_t pVertexCount = 3;
 
-		void DrawCommand(const VkCommandBuffer& CmdBuf, uint32_t ImageIndex);
+		void DrawCommand(VkCommandBuffer CmdBuf, uint32_t ImageIndex);
 	};
 
 }

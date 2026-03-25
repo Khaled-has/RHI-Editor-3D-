@@ -87,10 +87,42 @@ namespace GPU
 		return pShaderModule;
 	}
 
+	VkShaderModule CreateShaderModuleDirctly(std::string pSource, shaderc_shader_kind pKind)
+	{
+		// # Step 1: Compile spv
+		std::vector<uint32_t> spv = CompileShader(
+			pSource,
+			pKind,
+			pSource
+		);
+
+		// # Step 2: Create the shader
+		VkShaderModuleCreateInfo CreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+			.codeSize = size_t(spv.size() * sizeof(uint32_t)),
+			.pCode = spv.data()
+		};
+
+		VkShaderModule pShaderModule = VK_NULL_HANDLE;
+		VkResult res = vkCreateShaderModule(
+			VK_Backend::Get()->GetDevice().GetDevice(), &CreateInfo,
+			NULL, &pShaderModule
+		);
+		VK_CHECK("vkCreateShaderModule", res);
+
+		return pShaderModule;
+	}
+
 	void VK_Shader::Create(const char* pVertex, const char* pFragment)
 	{
 		CreateVertexShader(pVertex);
 		CreateFragmentShader(pFragment);
+	}
+
+	void VK_Shader::Read(const char* pVertexShader, const char* pFragmentShader)
+	{
+		pVS = CreateShaderModuleDirctly(pVertexShader, shaderc_vertex_shader);
+		pFS = CreateShaderModuleDirctly(pFragmentShader, shaderc_fragment_shader);
 	}
 
 	void VK_Shader::Destroy()

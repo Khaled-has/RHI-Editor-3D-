@@ -135,10 +135,11 @@ namespace GPU
 
 	void VK_GraphicsPipeline::UpdateDescriptorSets(const std::vector<VK_PipelineBinding>* pBindingsInfo)
 	{
-		std::vector<VkWriteDescriptorSet> WriteDescriptorSets{};
 
 		for (uint32_t i = 0; i < VK_Backend::Get()->GetSwapChain().GetImageCount(); i++)
 		{
+			std::vector<VkWriteDescriptorSet> WriteDescriptorSets{};
+
 			for (uint32_t j = 0; j < pBindingsInfo->size(); j++)
 			{
 				// # Buffer
@@ -202,17 +203,60 @@ namespace GPU
 						}
 					);
 				}
-			}
-		}
+				// # Frame image
+				else if (pBindingsInfo->at(j).pBindingType == VK_BINDING_FRAME_IMAGE_INFO)
+				{
+					/*for (uint32_t im = 0; im < pBindingsInfo->at(j).pFrameImage.pImages.size(); im++)
+					{
+						VkDescriptorImageInfo ImageInfo = {
+							.sampler = pBindingsInfo->at(j).pFrameImage.pSamplers[im],
+							.imageView = pBindingsInfo->at(j).pFrameImage.pViews[im],
+							.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+						};
 
-		vkUpdateDescriptorSets(
+						WriteDescriptorSets.push_back(
+							VkWriteDescriptorSet{
+								.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+								.dstSet = pDescriptorSets[i],
+								.dstBinding = pBindingsInfo->at(j).pBinding,
+								.dstArrayElement = 0,
+								.descriptorCount = 1,
+								.descriptorType = pBindingsInfo->at(j).pDescType,
+								.pImageInfo = &ImageInfo
+						});
+					}*/
+
+					VkDescriptorImageInfo ImageInfo = {
+							.sampler = pBindingsInfo->at(j).pFrameImage.pSamplers[i],
+							.imageView = pBindingsInfo->at(j).pFrameImage.pViews[i],
+							.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+					};
+
+					WriteDescriptorSets.push_back(
+						VkWriteDescriptorSet{
+							.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+							.dstSet = pDescriptorSets[i],
+							.dstBinding = pBindingsInfo->at(j).pBinding,
+							.dstArrayElement = 0,
+							.descriptorCount = 1,
+							.descriptorType = pBindingsInfo->at(j).pDescType,
+							.pImageInfo = &ImageInfo
+					});
+				}
+			}
+
+			vkUpdateDescriptorSets(
 			VK_Backend::Get()->GetDevice().GetDevice(), (uint32_t)WriteDescriptorSets.size(),
 			WriteDescriptorSets.data(), 0, NULL
-		);
+			);
 	}
+		}
+
 
 	void VK_GraphicsPipeline::CreatePipeline(const VkShaderModule& pVs, const VkShaderModule& pFs)
 	{
+		bool IsDepthTest = VK_Backend::Get()->GetSwapChain().IsDepthTest();
+
 		VkPipelineShaderStageCreateInfo ShaderStagesCreateInfo[2] = {
 		{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -311,8 +355,8 @@ namespace GPU
 			.pNext = NULL,
 			.colorAttachmentCount = 1,
 			.pColorAttachmentFormats = &ColorFormat,
-			.depthAttachmentFormat = DepthFormat,
-			.stencilAttachmentFormat = VK_FORMAT_UNDEFINED
+			/*.depthAttachmentFormat = DepthFormat,
+			.stencilAttachmentFormat = VK_FORMAT_UNDEFINED*/
 		};
 
 		VkPipelineLayoutCreateInfo LayoutInfo = {

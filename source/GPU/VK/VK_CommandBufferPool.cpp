@@ -69,12 +69,14 @@ namespace GPU
 	{
 		const VkSurfaceFormatKHR pFormat = VK_Backend::Get()->GetSwapChain().GetSurfaceFormat();
 		const bool pIsDynamicSupported = VK_Backend::Get()->GetDevice().GetSelectedDevice().pIsDynamicSupported;
+		const bool pIsDepthTest = VK_Backend::Get()->GetSwapChain().IsDepthTest();
 
 		const VkRenderPass& pRenderPass = VK_Backend::Get()->GetSwapChain().GetRenderPass();
 
 		// # RenderPass begin info
-		VkClearValue pClearColor;
-		pClearColor.color = { 0.0, 0.0, 0.0, 1.0 };
+		std::array<VkClearValue, 2> pClear;
+		pClear[0].color = {0.0, 0.0, 0.0, 1.0};
+		pClear[1].depthStencil = { .depth = 1.0f, .stencil = 0 };
 
 		VkRenderPassBeginInfo RenderPassBeginInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -89,8 +91,8 @@ namespace GPU
 					.height = Win::Window::GetInstance()->GetWindowSize().second
 				}
 			},
-			.clearValueCount = 1,
-			.pClearValues = &pClearColor,
+			.clearValueCount = pIsDepthTest ? 2u : 1u,
+			.pClearValues = &pClear[0],
 		};
 
 		for (uint32_t i = 0; i < VK_Backend::Get()->GetSwapChain().GetImageCount(); i++)
@@ -103,16 +105,12 @@ namespace GPU
 			// # Begin rendering with Dynamic
 			if (pIsDynamicSupported)
 			{
-				VkClearValue DepthValue = {
-					.depthStencil = {.depth = 1.0f, .stencil = 0}
-				};
-
 				ImageMemBarrier(
 					CmdBuf, Image, pFormat.format,
 					VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1
 				);
 
-				BeginDynamicRendering(CmdBuf, i, &pClearColor, &DepthValue);
+				BeginDynamicRendering(CmdBuf, i, &pClear[0], &pClear[1], pIsDepthTest);
 			}
 			// # Begin rendering with RenderPass
 			else

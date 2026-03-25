@@ -53,7 +53,6 @@ namespace GPU
 		pShader.Create("test.vert", "test.frag");
 
 		pGraphPipeline.Create(&pBindings, pShader.GetVertexShader(), pShader.GetFragmentShader());
-		RecordCommandBuffer(BIND_COMMAND_DRAW_FN(&VK_Draw::DrawCommand));
 	}
 
 	void VK_Draw::Destroy()
@@ -65,16 +64,19 @@ namespace GPU
 	void VK_Draw::Draw(uint32_t pFirstVertex, uint32_t pVertexCount)
 	{
 		// # Rerecord if any thing change
-		if (this->pFirstVertex != pFirstVertex || this->pVertexCount != pVertexCount)
-		{
-			this->pFirstVertex = pFirstVertex;
-			this->pVertexCount = pVertexCount;
+		this->pFirstVertex = pFirstVertex;
+		this->pVertexCount = pVertexCount;
 
-			RecordCommandBuffer(BIND_COMMAND_DRAW_FN(&VK_Draw::DrawCommand));
-		}
+		// # Bind the draw function in the draw commands queue
+		VK_Backend::Get()->GetDrawCmdsArray()->push_back(
+			[&](VkCommandBuffer Cmd, uint32_t ImageIndex)
+			{
+				DrawCommand(Cmd, ImageIndex);
+			}
+		);
 	}
 
-	void VK_Draw::DrawCommand(const VkCommandBuffer& CmdBuf, uint32_t ImageIndex)
+	void VK_Draw::DrawCommand(VkCommandBuffer CmdBuf, uint32_t ImageIndex)
 	{
 		pGraphPipeline.Bind(ImageIndex);
 
